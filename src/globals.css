@@ -1,0 +1,542 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%; /* Ensure html, body, and root div take full height */
+  }
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 20%;
+    --primary: 220 60% 35%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 8% 95%;
+    --muted-foreground: 220 8% 45%;
+    --accent: 145 25% 92%;
+    --accent-foreground: 145 30% 25%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 12% 88%;
+    --input: 220 12% 88%;
+    --ring: 220 60% 35%;
+    --radius: 0.5rem;
+
+    /* --- THEME: TUTOR --- */
+    --tutor-sidebar-background: 220 45% 40%; /* Professional blue-gray */
+    --tutor-sidebar-foreground: 0 0% 98%;
+    --tutor-sidebar-muted-foreground: 220 15% 80%;
+    --tutor-sidebar-active-background: 0 0% 100%;
+    --tutor-sidebar-active-foreground: 220 45% 35%;
+    --tutor-sidebar-border: 220 30% 35%;
+    --tutor-header-background: 0 0% 100%; /* Made solid */
+
+    /* --- THEME: ADMIN --- */
+    --admin-sidebar-background: 220 70% 25%; /* Deep professional blue */
+    --admin-sidebar-foreground: 0 0% 98%;
+    --admin-sidebar-muted-foreground: 220 20% 75%;
+    --admin-sidebar-active-background: 220 80% 45%;
+    --admin-sidebar-active-foreground: 0 0% 98%;
+    --admin-sidebar-border: 220 50% 20%;
+    --admin-header-background: 0 0% 100%; /* Made solid */
+    --admin-card-background: 0 0% 100%;
+
+    /* --- THEME: STUDENT --- */
+    --student-sidebar-background-start: 200 55% 35%; /* Professional teal-blue */
+    --student-sidebar-background-end: 210 50% 40%;
+    --student-sidebar-foreground: 0 0% 95%;
+    --student-sidebar-muted-foreground: 200 20% 75%;
+    --student-sidebar-active-background: 0 0% 100%;
+    --student-sidebar-active-foreground: 200 55% 30%;
+    --student-sidebar-border: 200 40% 30%;
+    --student-header-background: 0 0% 100%; /* Made solid */
+
+    /* --- THEME: HOD --- */
+    --hod-sidebar-background: 160 40% 35%; /* Professional emerald-teal */
+    --hod-sidebar-foreground: 0 0% 98%;
+    --hod-sidebar-muted-foreground: 160 20% 75%;
+    --hod-sidebar-active-background: 160 50% 55%;
+    --hod-sidebar-active-foreground: 0 0% 98%;
+    --hod-sidebar-border: 160 30% 30%;
+    --hod-header-background: 0 0% 100%; /* Made solid */
+
+    /* --- THEME: PRINCIPAL --- */
+    --principal-sidebar-background: 260 45% 35%; /* Professional purple-blue */
+    --principal-sidebar-foreground: 0 0% 98%;
+    --principal-sidebar-muted-foreground: 260 20% 75%;
+    --principal-sidebar-active-background: 260 55% 55%;
+    --principal-sidebar-active-foreground: 0 0% 98%;
+    --principal-sidebar-border: 260 35% 30%;
+    --principal-header-background: 0 0% 100%; /* Made solid */
+
+    /* Custom colors for login button hover effect */
+    --lighter-dark-shade: 220 30% 25%;
+    --dark-blue-hover: 220 60% 45%;
+
+    /* New Dashboard Gradient Colors */
+    --dashboard-gradient-violet: 240 35% 40%;
+    --dashboard-gradient-blue: 220 45% 35%;
+    --dashboard-gradient-cyan: 190 40% 40%;
+    --dashboard-gradient-lavender: 260 30% 45%;
+    
+    /* Deep Teal Main Background Variables */
+    --main-background-white: 0 0% 100%; /* White background in HSL */
+    --main-background-white-light: 0 0% 98%;
+    --main-background-white-accent: 0 0% 96%;
+  }
+
+  .dark {
+    --background: 220 20% 6%;
+    --foreground: 0 0% 95%;
+    --card: 220 18% 9%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 18% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 220 55% 65%;
+    --primary-foreground: 220 20% 10%;
+    --secondary: 220 15% 12%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 220 15% 12%;
+    --muted-foreground: 220 8% 60%;
+    --accent: 145 25% 15%;
+    --accent-foreground: 145 30% 85%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 220 15% 15%;
+    --input: 220 15% 15%;
+    --ring: 220 55% 65%;
+
+    /* --- DARK THEMES --- */
+    --header-background: 220 20% 6%; /* Made solid */
+    --admin-header-background: 220 20% 6%; /* Made solid */
+    --admin-card-background: 220 18% 12%;
+    --student-header-background: 220 20% 6%; /* Made solid */
+    --tutor-header-background: 220 20% 6%; /* Made solid */
+    --hod-header-background: 220 20% 6%; /* Made solid */
+    --principal-header-background: 220 20% 6%; /* Made solid */
+
+    /* Custom colors for login button hover effect */
+    --lighter-dark-shade: 220 30% 18%;
+    --dark-blue-hover: 220 55% 50%;
+
+    /* New Dashboard Gradient Colors (Dark Mode) */
+    --dashboard-gradient-violet: 240 35% 22%;
+    --dashboard-gradient-blue: 220 45% 18%;
+    --dashboard-gradient-cyan: 190 40% 20%;
+    --dashboard-gradient-lavender: 260 30% 25%;
+    
+    /* Deep Teal Main Background Variables (Dark Mode) */
+    --main-background-charcoal: 210 15% 20%; /* Even deeper for dark mode */
+    --main-background-charcoal-light: 210 15% 25%;
+    --main-background-charcoal-accent: 210 15% 30%;
+
+    /* Example of a new custom dark-mode-only class */
+    .dark-only-highlight {
+      background-color: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+    }
+  }
+
+  .dark[data-student-theme='sunset'] {
+    --student-sidebar-background-start: 15 45% 25%;
+    --student-sidebar-background-end: 25 40% 22%;
+  }
+
+  .dark[data-student-theme='ocean'] {
+    --student-sidebar-background-start: 200 50% 22%;
+    --student-sidebar-background-end: 210 45% 20%;
+  }
+
+  .dark[data-student-theme='forest'] {
+    --student-sidebar-background-start: 150 40% 18%;
+    --student-sidebar-background-end: 160 35% 16%;
+  }
+}
+
+@layer components {
+  .admin-layout-theme {
+    --card: hsl(var(--admin-card-background));
+  }
+  /* New universal sidebar gradient */
+  .bg-sidebar-gradient {
+    background: linear-gradient(
+      135deg, /* From top-left to bottom-right */
+      hsl(var(--dashboard-gradient-violet)) 0%,
+      hsl(var(--dashboard-gradient-blue)) 35%,
+      hsl(var(--dashboard-gradient-cyan)) 70%,
+      hsl(var(--dashboard-gradient-lavender)) 100%
+    );
+  }
+
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-sm border border-border/50 shadow-md;
+  }
+  .dark .glass-card {
+    @apply bg-card/40 backdrop-blur-sm border border-border/30 shadow-lg;
+  }
+
+  /* Sidebar text popup effects */
+  .sidebar-text-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-text-hover:hover {
+    animation: text-popup 0.3s ease forwards, text-glow 0.3s ease forwards;
+    transform-origin: center;
+  }
+
+  /* New wavy background for main content with white for light mode */
+  .wavy-background {
+    background-color: #ffffff; /* White background for light mode */
+    background-image:
+      radial-gradient(at 15% 80%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+      radial-gradient(at 85% 20%, rgba(230, 230, 230, 0.4) 0%, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(250, 250, 250, 0.2) 0%, transparent 40%);
+    background-size: 120% 120%; /* Slightly larger than container */
+    background-repeat: no-repeat;
+    animation: subtle-flow 30s ease-in-out infinite alternate;
+  }
+  
+  /* Dark mode version with charcoal tones */
+  .dark .wavy-background {
+    background-color: #2A3439; /* Charcoal for dark mode */
+    background-image:
+      radial-gradient(at 15% 80%, rgba(50, 65, 75, 0.4) 0%, transparent 50%),
+      radial-gradient(at 85% 20%, rgba(35, 45, 55, 0.5) 0%, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(65, 80, 90, 0.3) 0%, transparent 40%);
+  }
+  
+  /* Ensure proper text visibility in light mode */
+  .wavy-background h1,
+  .wavy-background h2,
+  .wavy-background h3,
+  .wavy-background h4,
+  .wavy-background h5,
+  .wavy-background h6 {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow for light mode */
+  }
+  
+  /* Dark mode headings */
+  .dark .wavy-background h1,
+  .dark .wavy-background h2,
+  .dark .wavy-background h3,
+  .dark .wavy-background h4,
+  .dark .wavy-background h5,
+  .dark .wavy-background h6 {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Dark shadow for dark mode */
+  }
+}
+
+@keyframes subtle-flow {
+  0% {
+    background-position: 0% 0%, 100% 100%;
+  }
+  100% {
+    background-position: 100% 100%, 0% 0%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Blue glow effect on bottom edge of body in dark theme */
+  .dark body::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), transparent);
+    box-shadow: 
+      0 0 25px rgba(59, 130, 246, 0.9),
+      0 0 50px rgba(59, 130, 246, 0.7),
+      0 0 75px rgba(59, 130, 246, 0.5);
+    z-index: 9999;
+    pointer-events: none;
+    animation: glow-pulse 2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes glow-pulse {
+  0% {
+    opacity: 0.8;
+    transform: scaleX(0.9);
+    filter: brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1.1);
+    filter: brightness(1.8);
+  }
+}
+
+@keyframes sidebar-blow-up {
+  0% {
+    transform: scale(0.95) translateX(-10px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes text-popup {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes text-glow {
+  0% {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 25px rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Dashboard Card Theme Styles */
+.dashboard-card-primary {
+  @apply bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 border-blue-300 shadow-blue-200/50;
+}
+.dark .dashboard-card-primary {
+  @apply bg-gradient-to-br from-blue-950/60 via-blue-900/50 to-indigo-950/60 border-blue-700/60 shadow-blue-900/30;
+}
+
+.dashboard-card-success {
+  @apply bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 border-green-300 shadow-green-200/50;
+}
+.dark .dashboard-card-success {
+  @apply bg-gradient-to-br from-green-950/60 via-green-900/50 to-emerald-950/60 border-green-700/60 shadow-green-900/30;
+}
+
+.dashboard-card-warning {
+  @apply bg-gradient-to-br from-amber-50 via-amber-100 to-yellow-100 border-amber-300 shadow-amber-200/50;
+}
+.dark .dashboard-card-warning {
+  @apply bg-gradient-to-br from-amber-950/60 via-amber-900/50 to-yellow-950/60 border-amber-700/60 shadow-amber-900/30;
+}
+
+.dashboard-card-info {
+  @apply bg-gradient-to-br from-cyan-50 via-cyan-100 to-sky-100 border-cyan-300 shadow-cyan-200/50;
+}
+.dark .dashboard-card-info {
+  @apply bg-gradient-to-br from-cyan-950/60 via-cyan-900/50 to-sky-950/60 border-cyan-700/60 shadow-cyan-900/30;
+}
+
+.dashboard-card-danger {
+  @apply bg-gradient-to-br from-red-50 via-red-100 to-rose-100 border-red-300 shadow-red-200/50;
+}
+.dark .dashboard-card-danger {
+  @apply bg-gradient-to-br from-red-950/60 via-red-900/50 to-rose-950/60 border-red-700/60 shadow-red-900/30;
+}
+
+.dashboard-card-purple {
+  @apply bg-gradient-to-br from-purple-50 via-purple-100 to-violet-100 border-purple-300 shadow-purple-200/50;
+}
+.dark .dashboard-card-purple {
+  @apply bg-gradient-to-br from-purple-950/60 via-purple-900/50 to-violet-950/60 border-purple-700/60 shadow-purple-900/30;
+}
+
+.dashboard-card-emerald {
+  @apply bg-gradient-to-br from-emerald-50 via-emerald-100 to-teal-100 border-emerald-300 shadow-emerald-200/50;
+}
+.dark .dashboard-card-emerald {
+  @apply bg-gradient-to-br from-emerald-950/60 via-emerald-900/50 to-teal-950/60 border-emerald-700/60 shadow-emerald-900/30;
+}
+
+.dashboard-card-cyan {
+  @apply bg-gradient-to-br from-cyan-50 via-cyan-100 to-blue-100 border-cyan-300 shadow-cyan-200/50;
+}
+.dark .dashboard-card-cyan {
+  @apply bg-gradient-to-br from-cyan-950/60 via-cyan-900/50 to-blue-950/60 border-cyan-700/60 shadow-cyan-900/30;
+}
+
+.dashboard-card-rose {
+  @apply bg-gradient-to-br from-rose-50 via-rose-100 to-pink-100 border-rose-300 shadow-rose-200/50;
+}
+.dark .dashboard-card-rose {
+  @apply bg-gradient-to-br from-rose-950/60 via-rose-900/50 to-pink-950/60 border-rose-700/60 shadow-rose-900/30;
+}
+
+/* Role-specific card themes */
+.dashboard-card-admin {
+  @apply bg-gradient-to-br from-slate-50 via-slate-100 to-gray-100 border-slate-300 shadow-slate-200/50;
+}
+.dark .dashboard-card-admin {
+  @apply bg-gradient-to-br from-slate-900/70 via-slate-800/60 to-gray-900/70 border-slate-600/60 shadow-slate-800/40;
+}
+
+.dashboard-card-student {
+  @apply bg-gradient-to-br from-sky-50 via-sky-100 to-blue-100 border-sky-300 shadow-sky-200/50;
+}
+.dark .dashboard-card-student {
+  @apply bg-gradient-to-br from-sky-950/60 via-sky-900/50 to-blue-950/60 border-sky-600/60 shadow-sky-800/40;
+}
+
+.dashboard-card-tutor {
+  @apply bg-gradient-to-br from-lime-50 via-lime-100 to-green-100 border-lime-300 shadow-lime-200/50;
+}
+.dark .dashboard-card-tutor {
+  @apply bg-gradient-to-br from-lime-950/60 via-lime-900/50 to-green-950/60 border-lime-600/60 shadow-lime-800/40;
+}
+
+.dashboard-card-hod {
+  @apply bg-gradient-to-br from-teal-50 via-teal-100 to-emerald-100 border-teal-300 shadow-teal-200/50;
+}
+.dark .dashboard-card-hod {
+  @apply bg-gradient-to-br from-teal-950/60 via-teal-900/50 to-emerald-950/60 border-teal-600/60 shadow-teal-800/40;
+}
+
+.dashboard-card-principal {
+  @apply bg-gradient-to-br from-violet-50 via-violet-100 to-purple-100 border-violet-300 shadow-violet-200/50;
+}
+.dark .dashboard-card-principal {
+  @apply bg-gradient-to-br from-violet-950/60 via-violet-900/50 to-purple-950/60 border-violet-600/60 shadow-violet-800/40;
+}
+
+/* Enhanced dashboard card animations and effects */
+.glass-card:hover {
+  @apply shadow-2xl;
+  transform: translateY(-2px) scale(1.02);
+}
+
+.glass-card {
+  @apply backdrop-blur-md;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dashboard card header glow effect */
+.dashboard-card-primary:hover .card-header-glow {
+  @apply shadow-blue-300/60;
+}
+
+.dashboard-card-success:hover .card-header-glow {
+  @apply shadow-green-300/60;
+}
+
+.dashboard-card-warning:hover .card-header-glow {
+  @apply shadow-amber-300/60;
+}
+
+.dashboard-card-info:hover .card-header-glow {
+  @apply shadow-cyan-300/60;
+}
+
+.dashboard-card-danger:hover .card-header-glow {
+  @apply shadow-red-300/60;
+}
+
+.dashboard-card-purple:hover .card-header-glow {
+  @apply shadow-purple-300/60;
+}
+
+.dashboard-card-emerald:hover .card-header-glow {
+  @apply shadow-emerald-300/60;
+}
+
+.dashboard-card-cyan:hover .card-header-glow {
+  @apply shadow-cyan-300/60;
+}
+
+.dashboard-card-rose:hover .card-header-glow {
+  @apply shadow-rose-300/60;
+}
+
+/* Enhanced Login Button Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.4);
+  }
+}
+
+@keyframes button-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+.login-button {
+  @apply relative overflow-hidden;
+  animation: pulse-glow 2s infinite;
+}
+
+.login-button:hover {
+  animation: button-bounce 0.6s ease-in-out;
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.7s;
+}
+
+.login-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced Input Focus Effects */
+.enhanced-input:focus {
+  @apply ring-4 ring-primary/20 border-primary;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Floating Label Animation */
+@keyframes float-up {
+  from {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(-8px) scale(0.9);
+    opacity: 1;
+  }
+}

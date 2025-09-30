@@ -1,0 +1,1 @@
+SELECT id, name, section, current_semester, department_id FROM batches WHERE EXISTS (SELECT 1 FROM students WHERE students.id = auth.uid() AND students.batch_id = batches.id);

@@ -1,0 +1,1 @@
+SELECT id, batch_id, tutor_id, hod_id FROM students WHERE id = 'YOUR_STUDENT_ID_UUID';

@@ -1,0 +1,1 @@
+id = (SELECT tutor_id FROM students WHERE id = auth.uid()) OR id = (SELECT hod_id FROM students WHERE id = auth.uid())

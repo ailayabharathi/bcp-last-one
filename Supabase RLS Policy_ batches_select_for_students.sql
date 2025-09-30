@@ -1,0 +1,1 @@
+EXISTS (SELECT 1 FROM students WHERE students.id = auth.uid() AND students.batch_id = batches.id)

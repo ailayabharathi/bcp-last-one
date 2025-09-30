@@ -1,0 +1,1 @@
+SELECT id, name FROM departments WHERE EXISTS (SELECT 1 FROM students JOIN batches ON students.batch_id = batches.id WHERE students.id = auth.uid() AND batches.department_id = departments.id);
