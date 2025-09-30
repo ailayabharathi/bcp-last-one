@@ -478,32 +478,44 @@ export const createStudent = async (profileData: Omit<Profile, 'id' | 'created_a
 
 export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> => {
   const { data, error } = await supabase
-    .from("profiles")
+    .from("students") // Start from the students table
     .select(`
-      id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id, batch_id, created_at, updated_at,
-      students(register_number, parent_name, batch_id, tutor_id, hod_id),
-      batches(name, section, current_semester, departments(name)),
-      tutors:profiles!students_tutor_id_fkey(first_name, last_name),
-      hods:profiles!students_hod_id_fkey(first_name, last_name)
-    `)
-    .eq('role', 'student');
+      id, register_number, parent_name,
+      profiles(id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id, batch_id, created_at, updated_at),
+      batches(id, name, section, current_semester, departments(id, name)),
+      tutors:profiles!students_tutor_id_fkey(id, first_name, last_name),
+      hods:profiles!students_hod_id_fkey(id, first_name, last_name)
+    `);
 
   if (error) {
     console.error("Error fetching all students with details:", error);
     throw new Error("Failed to fetch all students with details: " + error.message);
   }
 
-  return data.map((profile: any) => {
-    const studentData = profile.students[0];
-    const batch = profile.batches;
+  return data.map((studentRow: any) => {
+    const profileData = studentRow.profiles;
+    const batch = studentRow.batches;
     const department = batch?.departments;
-    const tutor = profile.tutors;
-    const hod = profile.hods;
+    const tutor = studentRow.tutors;
+    const hod = studentRow.hods;
 
     return {
-      ...profile,
-      register_number: studentData?.register_number,
-      parent_name: studentData?.parent_name,
+      id: studentRow.id,
+      register_number: studentRow.register_number,
+      parent_name: studentRow.parent_name,
+      
+      // Profile fields
+      first_name: profileData?.first_name,
+      last_name: profileData?.last_name,
+      username: profileData?.username,
+      email: profileData?.email,
+      phone_number: profileData?.phone_number,
+      avatar_url: profileData?.avatar_url,
+      role: profileData?.role,
+      created_at: profileData?.created_at,
+      updated_at: profileData?.updated_at,
+
+      // Joined fields
       batch_id: batch?.id,
       batch_name: batch ? `${batch.name} ${batch.section || ''}`.trim() : undefined,
       current_semester: batch?.current_semester,
@@ -511,7 +523,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
       department_name: department?.name,
       tutor_id: tutor?.id,
       tutor_name: tutor ? `${tutor.first_name} ${tutor.last_name || ''}`.trim() : undefined,
-      hod_id: hod?.id, // Corrected: This should be the ID, not the name
+      hod_id: hod?.id,
       hod_name: hod ? `${hod.first_name} ${hod.last_name || ''}`.trim() : undefined,
     } as StudentDetails;
   });
