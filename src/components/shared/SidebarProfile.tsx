@@ -10,6 +10,9 @@ interface SidebarProfileProps {
   textColorClass?: string; // Prop to pass text color class
 }
 
+// Define the problematic image URL that causes CORS errors
+const problematicImageUrl = 'https://images.meesho.com/images/products/455752769/8xzbm_512.jpg?width=512';
+
 const SidebarProfile = ({ isCollapsed, textColorClass }: SidebarProfileProps) => {
   const { profile } = useSession();
 
@@ -20,10 +23,13 @@ const SidebarProfile = ({ isCollapsed, textColorClass }: SidebarProfileProps) =>
   // Determine border color based on text color class
   const borderColorClass = textColorClass === "text-white" || textColorClass?.includes('text-white') ? "border-white/20" : "border-primary-foreground/20";
   
+  // Prevent loading the problematic external image URL
+  const displayAvatarUrl = profile.avatar_url === problematicImageUrl ? undefined : profile.avatar_url;
+
   return (
     <div className={cn("flex items-center p-4 border-t", borderColorClass)}>
       <Avatar className="h-9 w-9">
-        <AvatarImage src={profile.avatar_url} alt={profile.username} />
+        <AvatarImage src={displayAvatarUrl} alt={profile.username} />
         <AvatarFallback>
           <UserIcon className={cn("h-5 w-5 sidebar-text-hover", "text-white")} />
         </AvatarFallback>
