@@ -481,7 +481,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
     .from("students") // Start from the students table
     .select(`
       id, register_number, parent_name,
-      profiles(id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id, batch_id, created_at, updated_at),
+      student_profile:profiles!students_id_fkey(id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id, batch_id, created_at, updated_at),
       batches(id, name, section, current_semester, departments(id, name)),
       tutors:profiles!students_tutor_id_fkey(id, first_name, last_name),
       hods:profiles!students_hod_id_fkey(id, first_name, last_name)
@@ -493,7 +493,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
   }
 
   return data.map((studentRow: any) => {
-    const profileData = studentRow.profiles;
+    const profileData = studentRow.student_profile; // Changed from studentRow.profiles
     const batch = studentRow.batches;
     const department = batch?.departments;
     const tutor = studentRow.tutors;
