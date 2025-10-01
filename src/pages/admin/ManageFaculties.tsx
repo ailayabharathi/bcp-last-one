@@ -242,6 +242,7 @@ const ManageFaculties = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required={!editingFaculty}
+                        autoComplete="new-password" {/* Added autocomplete attribute */}
                       />
                       <Button
                         type="button"
