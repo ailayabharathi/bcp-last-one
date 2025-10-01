@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MoreHorizontal } from "lucide-react";
+import { Eye, EyeOff, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +57,7 @@ import {
   createTutor,
   updateTutor,
   deleteTutor,
+  updateUserPassword, // New import
 } from "@/data/appData";
 import { Profile, Department, Batch } from "@/lib/types";
 import { showSuccess, showError } from "@/utils/toast";
@@ -69,6 +70,8 @@ const ManageTutors = () => {
   const [editingTutor, setEditingTutor] = useState<Profile | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [tutorPassword, setTutorPassword] = useState(""); // New state for password
+  const [showTutorPassword, setShowTutorPassword] = useState(false); // New state for password visibility
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
@@ -107,6 +110,7 @@ const ManageTutors = () => {
     setEditingTutor(tutor);
     setSelectedDepartmentId(tutor.department_id || "");
     setSelectedBatchId(tutor.batch_id || "");
+    setTutorPassword(""); // Clear password field when opening edit dialog
     setIsAddEditDialogOpen(true);
   };
 
@@ -114,6 +118,7 @@ const ManageTutors = () => {
     setEditingTutor(null);
     setSelectedDepartmentId("");
     setSelectedBatchId("");
+    setTutorPassword(""); // Clear password field when opening add dialog
     setIsAddEditDialogOpen(true);
   };
 
@@ -121,7 +126,7 @@ const ManageTutors = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const tutorData: Omit<Profile, 'id' | 'created_at' | 'updated_at' | 'role'> = {
+    const tutorProfileData: Omit<Profile, 'id' | 'created_at' | 'updated_at' | 'role'> = {
       first_name: formData.get("first_name") as string,
       last_name: formData.get("last_name") as string,
       username: formData.get("username") as string,
@@ -132,15 +137,30 @@ const ManageTutors = () => {
     };
 
     if (editingTutor) {
-      const updated = await updateTutor(editingTutor.id, tutorData, selectedBatchId === "null-batch-assignment" ? undefined : selectedBatchId);
-      if (updated) {
-        showSuccess("Tutor details updated successfully.");
-        fetchAllData();
-      } else {
+      // Update profile details
+      const updatedProfile = await updateTutor(editingTutor.id, tutorProfileData);
+      if (!updatedProfile) {
         showError("Failed to update tutor details.");
+        return;
       }
+
+      // Update password if provided
+      if (tutorPassword) {
+        const passwordUpdated = await updateUserPassword(editingTutor.id, tutorPassword);
+        if (!passwordUpdated) {
+          showError("Failed to update tutor password.");
+          // Continue with profile update success, but log password error
+        }
+      }
+      showSuccess("Tutor details updated successfully.");
+      fetchAllData();
     } else {
-      const created = await createTutor({ ...tutorData, role: 'tutor' }, selectedBatchId === "null-batch-assignment" ? undefined : selectedBatchId);
+      // Create new tutor
+      if (!tutorPassword) {
+        showError("Password is required for new tutors.");
+        return;
+      }
+      const created = await createTutor({ ...tutorProfileData, role: 'tutor' }, tutorPassword);
       if (created) {
         showSuccess("New tutor added successfully.");
         fetchAllData();
@@ -151,6 +171,7 @@ const ManageTutors = () => {
 
     setIsAddEditDialogOpen(false);
     setEditingTutor(null);
+    setTutorPassword(""); // Clear password field
   };
 
   const handleDelete = async (tutorId: string, tutorName: string) => {
@@ -184,7 +205,11 @@ const ManageTutors = () => {
           open={isAddEditDialogOpen}
           onOpenChange={(isOpen) => {
             setIsAddEditDialogOpen(isOpen);
-            if (!isOpen) setEditingTutor(null);
+            if (!isOpen) {
+              setEditingTutor(null);
+              setTutorPassword(""); // Clear password on dialog close
+              setShowTutorPassword(false); // Reset password visibility
+            }
           }}
         >
           <DialogTrigger asChild>
@@ -286,6 +311,34 @@ const ManageTutors = () => {
                     required
                   />
                 </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password {editingTutor ? "(Leave blank to keep current)" : ""}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showTutorPassword ? "text" : "password"}
+                      value={tutorPassword}
+                      onChange={(e) => setTutorPassword(e.target.value)}
+                      required={!editingTutor} // Required only for new tutors
+                      autoComplete="new-password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-primary/10"
+                      onClick={() => setShowTutorPassword((prev) => !prev)}
+                    >
+                      {showTutorPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Toggle password visibility</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
               <DialogFooter>
                 <DialogClose asChild>
@@ -306,8 +359,8 @@ const ManageTutors = () => {
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Batch Assigned</TableHead>
-              <TableHead>Current Semester</TableHead> {/* New Column */}
-              <TableHead>Academic Year Range</TableHead> {/* New Column */}
+              <TableHead>Current Semester</TableHead>
+              <TableHead>Academic Year Range</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone Number</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -327,8 +380,8 @@ const ManageTutors = () => {
                     <TableCell className="font-medium">{`${tutor.first_name} ${tutor.last_name || ''}`.trim()}</TableCell>
                     <TableCell>{departmentName}</TableCell>
                     <TableCell>{fullBatchName}</TableCell>
-                    <TableCell>{currentSemester}</TableCell> {/* Display Current Semester */}
-                    <TableCell>{academicYearRange}</TableCell> {/* Display Academic Year Range */}
+                    <TableCell>{currentSemester}</TableCell>
+                    <TableCell>{academicYearRange}</TableCell>
                     <TableCell>{tutor.email}</TableCell>
                     <TableCell>{tutor.phone_number}</TableCell>
                     <TableCell className="text-right">
@@ -375,7 +428,7 @@ const ManageTutors = () => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center"> {/* Updated colSpan */}
+                <TableCell colSpan={8} className="text-center">
                   No tutors found.
                 </TableCell>
               </TableRow>

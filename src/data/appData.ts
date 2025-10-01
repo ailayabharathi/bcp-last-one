@@ -568,37 +568,76 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
   });
 };
 
-export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, batchId?: string): Promise<Profile | null> => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({ ...profileData, role: 'tutor', batch_id: batchId })
-    .select()
-    .single();
+export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
+  const { email, ...metaData } = profileData;
 
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: email!, // email is required for signup
+    password: password,
+    options: {
+      data: metaData, // Pass other profile fields as metadata
+    },
+  });
+
+  if (authError) {
+    console.error("Error signing up tutor user:", authError);
+    showError("Failed to create tutor user: " + authError.message);
+    return null;
+  }
+
+  if (authData.user) {
+    // The trigger `handle_new_user` should have created the profile.
+    // We need to fetch it to return the complete Profile object.
+    const { data: newProfile, error: profileFetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (profileFetchError || !newProfile) {
+      console.error("Error fetching newly created tutor profile:", profileFetchError);
+      showError("Failed to retrieve new tutor profile: " + profileFetchError?.message);
+      // Optionally, attempt to delete the auth user if profile creation failed
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return null;
+    }
+    return newProfile as Profile;
+  }
+  return null;
+};
+
+export const updateTutor = async (tutorId: string, updates: Partial<Profile>): Promise<Profile | null> => {
+  // Note: This function only updates the 'profiles' table.
+  // Password updates are handled by updateUserPassword.
+  const { data, error } = await supabase.from("profiles").update(updates).eq("id", tutorId).select().single();
   if (error) {
-    console.error("Error creating tutor:", error);
+    console.error("Error updating tutor profile:", error);
     return null;
   }
   return data as Profile;
 };
 
-export const updateTutor = async (tutorId: string, updates: Partial<Profile>, batchId?: string): Promise<Profile | null> => {
-  const updatePayload: Partial<Profile> = { ...updates };
-  if (batchId !== undefined) {
-    updatePayload.batch_id = batchId;
-  }
-  const { data, error } = await supabase.from("profiles").update(updatePayload).eq("id", tutorId).select().single();
+export const updateUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
+  const { data, error } = await supabase.auth.admin.updateUserById(
+    userId,
+    { password: newPassword }
+  );
+
   if (error) {
-    console.error("Error updating tutor:", error);
-    return null;
+    console.error("Error updating user password:", error);
+    showError("Failed to update user password: " + error.message);
+    return false;
   }
-  return data as Profile;
+  console.log("User password updated successfully for user:", data?.user?.id);
+  return true;
 };
 
 export const deleteTutor = async (tutorId: string): Promise<boolean> => {
-  const { error } = await supabase.from("profiles").delete().eq("id", tutorId);
+  // When deleting a tutor, we should also delete their auth.users entry.
+  // This will cascade delete the profile entry due to foreign key constraints.
+  const { error } = await supabase.auth.admin.deleteUser(tutorId);
   if (error) {
-    console.error("Error deleting tutor:", error);
+    console.error("Error deleting tutor user:", error);
     return false;
   }
   return true;
