@@ -565,18 +565,40 @@ export const deleteTutor = async (tutorId: string): Promise<boolean> => {
   return true;
 };
 
-export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>): Promise<Profile | null> => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({ ...profileData, role: 'hod' })
-    .select()
-    .single();
+export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
+  const { email, ...metaData } = profileData;
 
-  if (error) {
-    console.error("Error creating HOD:", error);
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: email!, // email is required for signup
+    password: password,
+    options: {
+      data: metaData, // Pass other profile fields as metadata
+    },
+  });
+
+  if (authError) {
+    console.error("Error signing up HOD user:", authError);
+    showError("Failed to create HOD user: " + authError.message);
     return null;
   }
-  return data as Profile;
+
+  if (authData.user) {
+    // The trigger `handle_new_user` should have created the profile.
+    // We need to fetch it to return the complete Profile object.
+    const { data: newProfile, error: profileFetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (profileFetchError || !newProfile) {
+      console.error("Error fetching newly created HOD profile:", profileFetchError);
+      showError("Failed to retrieve new HOD profile: " + profileFetchError?.message);
+      return null;
+    }
+    return newProfile as Profile;
+  }
+  return null;
 };
 
 export const updateHod = async (hodId: string, updates: Partial<Profile>): Promise<Profile | null> => {

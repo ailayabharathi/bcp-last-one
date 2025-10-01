@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MoreHorizontal } from "lucide-react";
+import { Eye, EyeOff, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +59,8 @@ const ManageFaculties = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Profile | null>(null);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
@@ -96,7 +98,12 @@ const ManageFaculties = () => {
         showError("Failed to update faculty details.");
       }
     } else {
-      const created = await createHod({ ...facultyData, role: 'hod' });
+      // For new HOD, include password
+      if (!password) {
+        showError("Password is required for new HODs.");
+        return;
+      }
+      const created = await createHod({ ...facultyData, role: 'hod' }, password);
       if (created) {
         showSuccess("New faculty added successfully.");
         fetchAllData();
@@ -107,6 +114,7 @@ const ManageFaculties = () => {
 
     setIsAddEditDialogOpen(false);
     setEditingFaculty(null);
+    setPassword(""); // Clear password field
   };
 
   const handleDelete = async (facultyId: string, facultyName: string) => {
@@ -140,7 +148,10 @@ const ManageFaculties = () => {
           open={isAddEditDialogOpen}
           onOpenChange={(isOpen) => {
             setIsAddEditDialogOpen(isOpen);
-            if (!isOpen) setEditingFaculty(null);
+            if (!isOpen) {
+              setEditingFaculty(null);
+              setPassword(""); // Clear password on dialog close
+            }
           }}
         >
           <DialogTrigger asChild>
@@ -220,6 +231,35 @@ const ManageFaculties = () => {
                     required
                   />
                 </div>
+                {!editingFaculty && ( // Only show password field for new HODs
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required={!editingFaculty}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-primary/10"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">Toggle password visibility</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <DialogClose asChild>
