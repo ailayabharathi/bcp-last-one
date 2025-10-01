@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -242,7 +242,7 @@ const ManageFaculties = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required={!editingFaculty}
-                        autoComplete="new-password" {/* Added autocomplete attribute */}
+                        autoComplete="new-password"
                       />
                       <Button
                         type="button"
