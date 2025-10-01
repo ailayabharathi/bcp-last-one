@@ -329,7 +329,7 @@ const StudentManagement = () => {
               <DialogHeader>
                 <DialogTitle>Add New Student</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4 overflow-y-auto max-h-[70vh]"> {/* Added overflow-y-auto and max-h */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="first_name">First Name</Label>
