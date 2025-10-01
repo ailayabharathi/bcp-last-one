@@ -79,6 +79,8 @@ export interface Profile {
 export interface StudentDetails extends Profile {
   register_number: string;
   parent_name?: string;
+  tutor_id?: string; // Added: UUID of the tutor
+  hod_id?: string; // Added: UUID of the HOD
   batch_name?: string; // Joined from batches table
   department_name?: string; // Joined from departments table
   tutor_name?: string; // Joined from profiles table
