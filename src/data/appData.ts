@@ -353,7 +353,7 @@ export const updateTemplate = async (
           .from('certificate-templates')
           .remove([oldFilePath]);
         if (deleteError) {
-          console.warn("Error deleting old file:", deleteError.message);
+          console.warn("Error deleting old file:", deleteFileError.message);
           // Don't block the update if old file deletion fails
         }
       }
@@ -441,41 +441,78 @@ interface NewStudentDetailsPayload {
   hod_id?: string;
 }
 
-export const createStudent = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, studentData: NewStudentDetailsPayload): Promise<StudentDetails | null> => {
-  const { data: newProfile, error: profileError } = await supabase
-    .from("profiles")
-    .insert({ ...profileData, role: 'student' })
-    .select()
-    .single();
+export const createStudent = async (
+  profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>,
+  studentData: NewStudentDetailsPayload,
+  password?: string // Make password optional
+): Promise<StudentDetails | null> => {
+  const { email, username, ...otherProfileData } = profileData;
+  
+  // Generate a random password if not provided (e.g., for bulk upload)
+  const finalPassword = password || Math.random().toString(36).slice(-8); // Simple random password
 
-  if (profileError || !newProfile) {
-    console.error("Error creating student profile:", profileError);
-    showError("Failed to create student profile: " + profileError?.message); // Added specific error
+  // 1. Create the user in Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: email!, // email is required for signup
+    password: finalPassword,
+    options: {
+      data: {
+        ...otherProfileData, // Pass other profile fields as metadata
+        username: username || `${otherProfileData.first_name}.${studentData.register_number}`, // Ensure username is always set
+        role: 'student', // Ensure role is passed for the handle_new_user trigger
+      },
+    },
+  });
+
+  if (authError) {
+    console.error("Error signing up student user:", authError);
+    showError("Failed to create student user: " + authError.message);
     return null;
   }
 
-  const { data: newStudent, error: studentError } = await supabase
-    .from("students")
-    .insert({
-      id: newProfile.id,
-      register_number: studentData.register_number,
-      parent_name: studentData.parent_name,
-      batch_id: studentData.batch_id,
-      tutor_id: studentData.tutor_id,
-      hod_id: studentData.hod_id,
-    })
-    .select()
-    .single();
+  if (authData.user) {
+    // The trigger `handle_new_user` should have created the profile.
+    // We need to fetch it to get the complete Profile object and ensure it exists.
+    const { data: newProfile, error: profileFetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
 
-  if (studentError || !newStudent) {
-    console.error("Error creating student entry:", studentError);
-    showError("Failed to create student entry: " + studentError?.message); // Added specific error
-    // Optionally, roll back profile creation here
-    await supabase.from("profiles").delete().eq("id", newProfile.id);
-    return null;
+    if (profileFetchError || !newProfile) {
+      console.error("Error fetching newly created student profile:", profileFetchError);
+      showError("Failed to retrieve new student profile: " + profileFetchError?.message);
+      // Optionally, attempt to delete the auth user if profile creation failed
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return null;
+    }
+
+    // 2. Insert student-specific details into the 'students' table
+    const { data: newStudentSpecificData, error: studentError } = await supabase
+      .from("students")
+      .insert({
+        id: newProfile.id, // Link to the newly created profile/auth user ID
+        register_number: studentData.register_number,
+        parent_name: studentData.parent_name,
+        batch_id: studentData.batch_id,
+        tutor_id: studentData.tutor_id,
+        hod_id: studentData.hod_id,
+      })
+      .select()
+      .single();
+
+    if (studentError || !newStudentSpecificData) {
+      console.error("Error creating student entry:", studentError);
+      showError("Failed to create student entry: " + studentError?.message);
+      // Roll back: delete the profile and auth user if student-specific data creation fails
+      await supabase.from("profiles").delete().eq("id", newProfile.id);
+      await supabase.auth.admin.deleteUser(newProfile.id);
+      return null;
+    }
+
+    return { ...newProfile, ...newStudentSpecificData } as StudentDetails;
   }
-
-  return { ...newProfile, ...newStudent } as StudentDetails;
+  return null;
 };
 
 export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> => {

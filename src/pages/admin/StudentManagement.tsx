@@ -39,7 +39,7 @@ import {
   createStudent,
   fetchProfiles,
 } from "@/data/appData";
-import { Download, MoreHorizontal, Upload, UserPlus } from "lucide-react";
+import { Download, MoreHorizontal, Upload, UserPlus, Eye, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,9 +72,11 @@ const StudentManagement = () => {
     parent_name: "",
     department_id: "",
     batch_id: "",
-    tutor_id: "",
-    hod_id: "",
+    tutor_id: undefined, // Changed to undefined for optional
+    hod_id: undefined, // Changed to undefined for optional
   });
+  const [newStudentPassword, setNewStudentPassword] = useState(""); // New state for password
+  const [showPassword, setShowPassword] = useState(false); // For toggling password visibility
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
@@ -144,32 +146,33 @@ const StudentManagement = () => {
         const batch = batches.find(b => b.id === student.batch_id);
         const hod = hods.find(h => h.department_id === department?.id);
 
-        if (!department || !batch) {
-          console.warn(`Skipping student ${student.register_number} due to missing department or batch.`);
+        if (!department || !batch || !student.email || !student.register_number) { // Added checks for email and register_number
+          console.warn(`Skipping student ${student.first_name} ${student.last_name} due to missing required data (email, register number, department, or batch).`);
           continue;
         }
 
-        const newStudent = await createStudent(
+        const createdStudent = await createStudent(
           {
             first_name: student.first_name,
             last_name: student.last_name,
-            username: student.username,
+            username: student.username || `${student.first_name}.${student.register_number}`, // Generate username if missing
             email: student.email,
             phone_number: student.phone_number,
             department_id: department.id,
             batch_id: batch.id,
-            role: 'student', // Explicitly set role
+            role: 'student',
           },
           {
-            register_number: student.register_number!,
+            register_number: student.register_number,
             parent_name: student.parent_name,
             batch_id: batch.id,
-            tutor_id: batch.tutor_id, // Assign batch's tutor as student's tutor
-            hod_id: hod?.id, // Assign correct HOD ID
+            tutor_id: batch.tutor_id,
+            hod_id: hod?.id,
           }
+          // No password passed here, so createStudent will generate one
         );
-        if (newStudent) {
-          newStudents.push(newStudent);
+        if (createdStudent) {
+          newStudents.push(createdStudent);
         }
       }
       showSuccess(`${newStudents.length} students uploaded successfully!`);
@@ -183,7 +186,7 @@ const StudentManagement = () => {
   };
 
   const handleAddSingleStudent = async () => {
-    if (!newStudentData.first_name || !newStudentData.email || !newStudentData.register_number || !newStudentData.department_id || !newStudentData.batch_id) {
+    if (!newStudentData.first_name || !newStudentData.email || !newStudentData.register_number || !newStudentData.department_id || !newStudentData.batch_id || !newStudentPassword) {
       showError("Please fill in all required fields.");
       return;
     }
@@ -193,7 +196,7 @@ const StudentManagement = () => {
         {
           first_name: newStudentData.first_name,
           last_name: newStudentData.last_name,
-          username: newStudentData.username,
+          username: newStudentData.username || `${newStudentData.first_name}.${newStudentData.register_number}`, // Generate username if missing
           email: newStudentData.email,
           phone_number: newStudentData.phone_number,
           department_id: newStudentData.department_id,
@@ -206,7 +209,8 @@ const StudentManagement = () => {
           batch_id: newStudentData.batch_id,
           tutor_id: newStudentData.tutor_id === "unassigned" ? undefined : newStudentData.tutor_id,
           hod_id: newStudentData.hod_id === "unassigned" ? undefined : newStudentData.hod_id,
-        }
+        },
+        newStudentPassword // Pass the password
       );
 
       if (createdStudent) {
@@ -215,8 +219,9 @@ const StudentManagement = () => {
         setNewStudentData({ // Reset form
           first_name: "", last_name: "", username: "", email: "", phone_number: "",
           register_number: "", parent_name: "", department_id: "", batch_id: "",
-          tutor_id: "", hod_id: "",
+          tutor_id: undefined, hod_id: undefined,
         });
+        setNewStudentPassword(""); // Clear password
         fetchAllData(); // Refresh student list
       } else {
         showError("Failed to add single student.");
@@ -396,7 +401,7 @@ const StudentManagement = () => {
                   <Label htmlFor="department_id">Department</Label>
                   <Select
                     value={newStudentData.department_id || ""}
-                    onValueChange={(value) => setNewStudentData({ ...newStudentData, department_id: value, batch_id: "", tutor_id: "", hod_id: "" })}
+                    onValueChange={(value) => setNewStudentData({ ...newStudentData, department_id: value, batch_id: "", tutor_id: undefined, hod_id: undefined })}
                     required
                   >
                     <SelectTrigger id="department_id">
@@ -470,6 +475,33 @@ const StudentManagement = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={newStudentPassword}
+                      onChange={(e) => setNewStudentPassword(e.target.value)}
+                      required
+                      autoComplete="new-password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-primary/10"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Toggle password visibility</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
