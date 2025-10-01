@@ -36,10 +36,15 @@ export const formatDateToIndian = (dateString: string | undefined): string => {
   if (!dateString) return "N/A";
   try {
     const date = new Date(dateString);
+    // Check if the date is valid before formatting
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date string provided to formatDateToIndian:", dateString);
+      return "Invalid Date";
+    }
     // en-GB locale formats as dd/mm/yyyy
     return date.toLocaleDateString("en-GB");
   } catch (error) {
-    console.error("Invalid date string:", dateString);
+    console.error("Error formatting date:", dateString, error);
     return "Invalid Date";
   }
 };
@@ -53,10 +58,10 @@ export const formatDateToIndian = (dateString: string | undefined): string => {
 export const calculateCurrentSemesterForBatch = (batchName: string): number => {
   const yearPart = batchName.split(" ")[0]; // "2023-2027 A" -> "2023-2027"
   const nameParts = yearPart.split("-");
-  if (nameParts.length !== 2) return 0; // Invalid format
+  if (nameParts.length !== 2) return 1; // Default to semester 1 if format is invalid
 
   const startYear = parseInt(nameParts[0], 10);
-  if (isNaN(startYear)) return 0; // Invalid year
+  if (isNaN(startYear)) return 1; // Default to semester 1 if startYear is invalid
 
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -94,7 +99,10 @@ export const getSemesterDateRange = (
   currentSemester: number
 ): { from: string; to: string } => {
   const yearPart = batchName.split(" ")[0]; // "2023-2027 A" -> "2023-2027"
-  const startYear = parseInt(yearPart.split("-")[0], 10);
+  const parsedStartYear = parseInt(yearPart.split("-")[0], 10);
+  // Use current year as fallback if parsedStartYear is invalid
+  const startYear = isNaN(parsedStartYear) ? new Date().getFullYear() : parsedStartYear; 
+  
   const academicYearOffset = Math.floor((currentSemester - 1) / 2);
   const isOddSemester = currentSemester % 2 !== 0;
 
@@ -111,6 +119,17 @@ export const getSemesterDateRange = (
     const year = startYear + academicYearOffset + 1;
     fromDate = new Date(year, 0, 1); // Jan 1st
     toDate = new Date(year, 5, 30); // June 30th
+  }
+
+  // Ensure dates are valid before converting to ISO string
+  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+    console.error("Generated an invalid date object in getSemesterDateRange. Batch:", batchName, "Semester:", currentSemester);
+    // Fallback to current date range if generated dates are invalid
+    const today = new Date();
+    return {
+      from: new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0],
+      to: new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0],
+    };
   }
 
   return {
