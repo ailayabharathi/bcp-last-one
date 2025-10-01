@@ -450,6 +450,7 @@ export const createStudent = async (profileData: Omit<Profile, 'id' | 'created_a
 
   if (profileError || !newProfile) {
     console.error("Error creating student profile:", profileError);
+    showError("Failed to create student profile: " + profileError?.message); // Added specific error
     return null;
   }
 
@@ -468,6 +469,7 @@ export const createStudent = async (profileData: Omit<Profile, 'id' | 'created_a
 
   if (studentError || !newStudent) {
     console.error("Error creating student entry:", studentError);
+    showError("Failed to create student entry: " + studentError?.message); // Added specific error
     // Optionally, roll back profile creation here
     await supabase.from("profiles").delete().eq("id", newProfile.id);
     return null;
