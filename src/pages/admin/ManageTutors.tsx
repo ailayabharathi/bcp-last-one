@@ -306,6 +306,8 @@ const ManageTutors = () => {
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Batch Assigned</TableHead>
+              <TableHead>Current Semester</TableHead> {/* New Column */}
+              <TableHead>Academic Year Range</TableHead> {/* New Column */}
               <TableHead>Email</TableHead>
               <TableHead>Phone Number</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -315,14 +317,18 @@ const ManageTutors = () => {
             {tutors.length > 0 ? (
               tutors.map((tutor) => {
                 const departmentName = departments.find(d => d.id === tutor.department_id)?.name || "N/A";
-                const batchAssignedName = batches.find(b => b.id === tutor.batch_id);
-                const fullBatchName = batchAssignedName ? `${batchAssignedName.name} ${batchAssignedName.section || ''}`.trim() : "N/A";
+                const assignedBatch = batches.find(b => b.id === tutor.batch_id);
+                const fullBatchName = assignedBatch ? `${assignedBatch.name} ${assignedBatch.section || ''}`.trim() : "N/A";
+                const currentSemester = assignedBatch?.current_semester || "N/A";
+                const academicYearRange = assignedBatch?.name || "N/A"; // Assuming batch.name is like "2023-2027"
 
                 return (
                   <TableRow key={tutor.id}>
                     <TableCell className="font-medium">{`${tutor.first_name} ${tutor.last_name || ''}`.trim()}</TableCell>
                     <TableCell>{departmentName}</TableCell>
                     <TableCell>{fullBatchName}</TableCell>
+                    <TableCell>{currentSemester}</TableCell> {/* Display Current Semester */}
+                    <TableCell>{academicYearRange}</TableCell> {/* Display Academic Year Range */}
                     <TableCell>{tutor.email}</TableCell>
                     <TableCell>{tutor.phone_number}</TableCell>
                     <TableCell className="text-right">
@@ -369,7 +375,7 @@ const ManageTutors = () => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={8} className="text-center"> {/* Updated colSpan */}
                   No tutors found.
                 </TableCell>
               </TableRow>
