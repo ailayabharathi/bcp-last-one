@@ -195,7 +195,7 @@
 
   /* New wavy background for main content with white for light mode */
   .wavy-background {
-    background-color: #ffffff; /* White background for light mode */
+    background-color: hsl(var(--main-background-white)); /* Use CSS variable for light mode */
     background-image:
       radial-gradient(at 15% 80%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
       radial-gradient(at 85% 20%, rgba(230, 230, 230, 0.4) 0%, transparent 50%),
@@ -207,7 +207,7 @@
   
   /* Dark mode version with charcoal tones */
   .dark .wavy-background {
-    background-color: #2A3439; /* Charcoal for dark mode */
+    background-color: hsl(var(--main-background-charcoal)); /* Use CSS variable for dark mode */
     background-image:
       radial-gradient(at 15% 80%, rgba(50, 65, 75, 0.4) 0%, transparent 50%),
       radial-gradient(at 85% 20%, rgba(35, 45, 55, 0.5) 0%, transparent 50%),
@@ -241,46 +241,6 @@
   }
   100% {
     background-position: 100% 100%, 0% 0%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  
-  /* Blue glow effect on bottom edge of body in dark theme */
-  .dark body::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), transparent);
-    box-shadow: 
-      0 0 25px rgba(59, 130, 246, 0.9),
-      0 0 50px rgba(59, 130, 246, 0.7),
-      0 0 75px rgba(59, 130, 246, 0.5);
-    z-index: 9999;
-    pointer-events: none;
-    animation: glow-pulse 2s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes glow-pulse {
-  0% {
-    opacity: 0.8;
-    transform: scaleX(0.9);
-    filter: brightness(1.2);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleX(1.1);
-    filter: brightness(1.8);
   }
 }
 
