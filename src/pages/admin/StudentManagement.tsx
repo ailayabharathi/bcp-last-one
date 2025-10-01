@@ -39,7 +39,7 @@ import {
   createStudent,
   fetchProfiles,
 } from "@/data/appData";
-import { Download, MoreHorizontal, Upload } from "lucide-react";
+import { Download, MoreHorizontal, Upload, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,11 +55,26 @@ const StudentManagement = () => {
   const [allStudents, setAllStudents] = useState<StudentDetails[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [tutors, setTutors] = useState<Profile[]>([]);
   const [hods, setHods] = useState<Profile[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isAddSingleStudentDialogOpen, setIsAddSingleStudentDialogOpen] = useState(false);
+  const [newStudentData, setNewStudentData] = useState<Partial<StudentDetails>>({
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    phone_number: "",
+    register_number: "",
+    parent_name: "",
+    department_id: "",
+    batch_id: "",
+    tutor_id: "",
+    hod_id: "",
+  });
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
@@ -68,17 +83,20 @@ const StudentManagement = () => {
       const fetchedStudents = await fetchAllStudentsWithDetails();
       const fetchedDepartments = await fetchDepartments();
       const fetchedBatches = await fetchBatches();
+      const fetchedTutors = await fetchProfiles('tutor');
       const fetchedHods = await fetchProfiles('hod');
 
       setAllStudents(fetchedStudents);
       setDepartments(fetchedDepartments);
       setBatches(fetchedBatches);
+      setTutors(fetchedTutors);
       setHods(fetchedHods);
     } catch (error: any) {
       showError(error.message);
       setAllStudents([]); // Clear data on error
       setDepartments([]);
       setBatches([]);
+      setTutors([]);
       setHods([]);
     } finally {
       setLoading(false);
@@ -98,6 +116,18 @@ const StudentManagement = () => {
       return departmentMatch && batchMatch;
     });
   }, [allStudents, selectedDepartment, selectedBatch]);
+
+  const filteredBatchesByDepartment = useMemo(() => {
+    return batches.filter(batch => batch.department_id === newStudentData.department_id);
+  }, [batches, newStudentData.department_id]);
+
+  const filteredTutorsByDepartment = useMemo(() => {
+    return tutors.filter(tutor => tutor.department_id === newStudentData.department_id);
+  }, [tutors, newStudentData.department_id]);
+
+  const filteredHodsByDepartment = useMemo(() => {
+    return hods.filter(hod => hod.department_id === newStudentData.department_id);
+  }, [hods, newStudentData.department_id]);
 
   const handleFileUpload = async () => {
     if (!uploadFile) {
@@ -148,6 +178,51 @@ const StudentManagement = () => {
       fetchAllData(); // Refresh student list
     } catch (error: any) {
       showError("Failed to parse or upload file: " + error.message);
+      console.error(error);
+    }
+  };
+
+  const handleAddSingleStudent = async () => {
+    if (!newStudentData.first_name || !newStudentData.email || !newStudentData.register_number || !newStudentData.department_id || !newStudentData.batch_id) {
+      showError("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const createdStudent = await createStudent(
+        {
+          first_name: newStudentData.first_name,
+          last_name: newStudentData.last_name,
+          username: newStudentData.username,
+          email: newStudentData.email,
+          phone_number: newStudentData.phone_number,
+          department_id: newStudentData.department_id,
+          batch_id: newStudentData.batch_id,
+          role: 'student',
+        },
+        {
+          register_number: newStudentData.register_number,
+          parent_name: newStudentData.parent_name,
+          batch_id: newStudentData.batch_id,
+          tutor_id: newStudentData.tutor_id === "unassigned" ? undefined : newStudentData.tutor_id,
+          hod_id: newStudentData.hod_id === "unassigned" ? undefined : newStudentData.hod_id,
+        }
+      );
+
+      if (createdStudent) {
+        showSuccess(`Student ${createdStudent.first_name} added successfully!`);
+        setIsAddSingleStudentDialogOpen(false);
+        setNewStudentData({ // Reset form
+          first_name: "", last_name: "", username: "", email: "", phone_number: "",
+          register_number: "", parent_name: "", department_id: "", batch_id: "",
+          tutor_id: "", hod_id: "",
+        });
+        fetchAllData(); // Refresh student list
+      } else {
+        showError("Failed to add single student.");
+      }
+    } catch (error: any) {
+      showError("Failed to add student: " + error.message);
       console.error(error);
     }
   };
@@ -238,6 +313,170 @@ const StudentManagement = () => {
                 <Button onClick={handleFileUpload} disabled={!uploadFile}>
                   Upload and Process
                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Single Student Dialog */}
+          <Dialog open={isAddSingleStudentDialogOpen} onOpenChange={setIsAddSingleStudentDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Single Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Student</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="first_name">First Name</Label>
+                    <Input
+                      id="first_name"
+                      value={newStudentData.first_name}
+                      onChange={(e) => setNewStudentData({ ...newStudentData, first_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="last_name">Last Name</Label>
+                    <Input
+                      id="last_name"
+                      value={newStudentData.last_name || ""}
+                      onChange={(e) => setNewStudentData({ ...newStudentData, last_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={newStudentData.username || ""}
+                    onChange={(e) => setNewStudentData({ ...newStudentData, username: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newStudentData.email || ""}
+                    onChange={(e) => setNewStudentData({ ...newStudentData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    value={newStudentData.phone_number || ""}
+                    onChange={(e) => setNewStudentData({ ...newStudentData, phone_number: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="register_number">Register Number</Label>
+                  <Input
+                    id="register_number"
+                    value={newStudentData.register_number || ""}
+                    onChange={(e) => setNewStudentData({ ...newStudentData, register_number: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="parent_name">Parent Name</Label>
+                  <Input
+                    id="parent_name"
+                    value={newStudentData.parent_name || ""}
+                    onChange={(e) => setNewStudentData({ ...newStudentData, parent_name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="department_id">Department</Label>
+                  <Select
+                    value={newStudentData.department_id || ""}
+                    onValueChange={(value) => setNewStudentData({ ...newStudentData, department_id: value, batch_id: "", tutor_id: "", hod_id: "" })}
+                    required
+                  >
+                    <SelectTrigger id="department_id">
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="batch_id">Batch</Label>
+                  <Select
+                    value={newStudentData.batch_id || ""}
+                    onValueChange={(value) => setNewStudentData({ ...newStudentData, batch_id: value })}
+                    disabled={!newStudentData.department_id}
+                    required
+                  >
+                    <SelectTrigger id="batch_id">
+                      <SelectValue placeholder="Select Batch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredBatchesByDepartment.map((batch) => (
+                        <SelectItem key={batch.id} value={batch.id}>
+                          {`${batch.name} ${batch.section || ''}`.trim()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="tutor_id">Tutor (Optional)</Label>
+                  <Select
+                    value={newStudentData.tutor_id || "unassigned"}
+                    onValueChange={(value) => setNewStudentData({ ...newStudentData, tutor_id: value === "unassigned" ? undefined : value })}
+                    disabled={!newStudentData.department_id}
+                  >
+                    <SelectTrigger id="tutor_id">
+                      <SelectValue placeholder="Select Tutor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {filteredTutorsByDepartment.map((tutor) => (
+                        <SelectItem key={tutor.id} value={tutor.id}>
+                          {`${tutor.first_name} ${tutor.last_name || ''}`.trim()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="hod_id">HOD (Optional)</Label>
+                  <Select
+                    value={newStudentData.hod_id || "unassigned"}
+                    onValueChange={(value) => setNewStudentData({ ...newStudentData, hod_id: value === "unassigned" ? undefined : value })}
+                    disabled={!newStudentData.department_id}
+                  >
+                    <SelectTrigger id="hod_id">
+                      <SelectValue placeholder="Select HOD" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {filteredHodsByDepartment.map((hod) => (
+                        <SelectItem key={hod.id} value={hod.id}>
+                          {`${hod.first_name} ${hod.last_name || ''}`.trim()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleAddSingleStudent}>Add Student</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
