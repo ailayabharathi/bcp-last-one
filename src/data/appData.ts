@@ -493,7 +493,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
   }
 
   return data.map((studentRow: any) => {
-    const profileData = studentRow.student_profile; // Changed from studentRow.profiles
+    const profileData = studentRow.student_profile; // This now correctly references the aliased profile
     const batch = studentRow.batches;
     const department = batch?.departments;
     const tutor = studentRow.tutors;
