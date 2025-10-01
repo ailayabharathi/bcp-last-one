@@ -107,10 +107,11 @@ const BatchManagement = () => {
   const groupedBatches = useMemo(() => {
     return batches.reduce(
       (acc, batch) => {
-        if (!acc[batch.name]) {
-          acc[batch.name] = [];
+        const groupKey = `${batch.department_id}-${batch.name}`; // Group by department and batch name
+        if (!acc[groupKey]) {
+          acc[groupKey] = [];
         }
-        acc[batch.name].push(batch);
+        acc[groupKey].push(batch);
         return acc;
       },
       {} as Record<string, Batch[]>
@@ -121,16 +122,16 @@ const BatchManagement = () => {
     Record<string, string>
   >(() => {
     const initialState: Record<string, string> = {};
-    for (const batchName in groupedBatches) {
-      initialState[batchName] = groupedBatches[batchName][0]?.id || '';
+    for (const groupKey in groupedBatches) {
+      initialState[groupKey] = groupedBatches[groupKey][0]?.id || '';
     }
     return initialState;
   });
 
-  const handleSectionChange = (batchName: string, newBatchId: string) => {
+  const handleSectionChange = (groupKey: string, newBatchId: string) => {
     setSelectedSections((prev) => ({
       ...prev,
-      [batchName]: newBatchId,
+      [groupKey]: newBatchId,
     }));
   };
 
@@ -397,10 +398,10 @@ const BatchManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.keys(groupedBatches).map((batchName) => {
-                const sections = groupedBatches[batchName];
+              {Object.keys(groupedBatches).map((groupKey) => { // Use groupKey here
+                const sections = groupedBatches[groupKey];
                 const selectedBatchId =
-                  selectedSections[batchName] || sections[0]?.id;
+                  selectedSections[groupKey] || sections[0]?.id; // Use groupKey here
                 const selectedBatchData =
                   batches.find((b) => b.id === selectedBatchId) || sections[0];
 
@@ -412,15 +413,15 @@ const BatchManagement = () => {
                 const assignedTutor = tutors.find(t => t.id === selectedBatchData.tutor_id);
 
                 return (
-                  <TableRow key={batchName}>
+                  <TableRow key={groupKey}> {/* Use groupKey for row key */}
                     <TableCell>{department?.name || "N/A"}</TableCell>
-                    <TableCell className="font-medium">{batchName}</TableCell>
+                    <TableCell className="font-medium">{selectedBatchData.name}</TableCell> {/* Display batch name */}
                     <TableCell>
                       {sections.length > 1 ? (
                         <Select
                           value={selectedBatchData.id}
                           onValueChange={(value) =>
-                            handleSectionChange(batchName, value)
+                            handleSectionChange(groupKey, value) // Use groupKey here
                           }
                         >
                           <SelectTrigger className="w-[80px]">
