@@ -69,7 +69,7 @@ export const fetchStudentDetails = async (studentId: string): Promise<StudentDet
     console.error("Dyad Debug: Error fetching student-specific data:", studentSpecificError);
     throw new Error("Failed to fetch student-specific data: " + studentSpecificError?.message);
   }
-  console.log("Dyad Debug: Fetched studentSpecificData (with IDs):", studentSpecificData);
+  console.log("Dyad Debug: Fetched studentSpecificData ( G with IDs):", studentSpecificData);
 
   const { batch_id, tutor_id, hod_id } = studentSpecificData;
 
@@ -349,10 +349,10 @@ export const updateTemplate = async (
     if (existingTemplate?.file_url) {
       const oldFilePath = existingTemplate.file_url.split('/public/')[1]; // Extract path after /public/
       if (oldFilePath) {
-        const { error: deleteError } = await supabase.storage
+        const { error: deleteFileError } = await supabase.storage
           .from('certificate-templates')
           .remove([oldFilePath]);
-        if (deleteError) {
+        if (deleteFileError) {
           console.warn("Error deleting old file:", deleteFileError.message);
           // Don't block the update if old file deletion fails
         }
@@ -448,6 +448,24 @@ export const createStudent = async (
 ): Promise<StudentDetails | null> => {
   const { email, username, ...otherProfileData } = profileData;
   
+  // Check if email already exists
+  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
+    perPage: 1,
+    page: 1,
+    search: email,
+  });
+
+  if (usersError) {
+    console.error("Error checking for existing user:", usersError);
+    showError("Failed to check for existing user: " + usersError.message);
+    return null;
+  }
+
+  if (existingUsers?.users && existingUsers.users.length > 0) {
+    showError(`An account with email "${email}" already exists.`);
+    return null;
+  }
+
   // Generate a random password if not provided (e.g., for bulk upload)
   const finalPassword = password || Math.random().toString(36).slice(-8); // Simple random password
 
@@ -515,61 +533,26 @@ export const createStudent = async (
   return null;
 };
 
-export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> => {
-  const { data, error } = await supabase
-    .from("students") // Start from the students table
-    .select(`
-      id, register_number, parent_name,
-      student_profile:profiles!students_id_fkey(id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id, batch_id, created_at, updated_at),
-      batches(id, name, section, current_semester, departments(id, name)),
-      tutors:profiles!students_tutor_id_fkey(id, first_name, last_name),
-      hods:profiles!students_hod_id_fkey(id, first_name, last_name)
-    `);
-
-  if (error) {
-    console.error("Error fetching all students with details:", error);
-    throw new Error("Failed to fetch all students with details: " + error.message);
-  }
-
-  return data.map((studentRow: any) => {
-    const profileData = studentRow.student_profile; // This now correctly references the aliased profile
-    const batch = studentRow.batches;
-    const department = batch?.departments;
-    const tutor = studentRow.tutors;
-    const hod = studentRow.hods;
-
-    return {
-      id: studentRow.id,
-      register_number: studentRow.register_number,
-      parent_name: studentRow.parent_name,
-      
-      // Profile fields
-      first_name: profileData?.first_name,
-      last_name: profileData?.last_name,
-      username: profileData?.username,
-      email: profileData?.email,
-      phone_number: profileData?.phone_number,
-      avatar_url: profileData?.avatar_url,
-      role: profileData?.role,
-      created_at: profileData?.created_at,
-      updated_at: profileData?.updated_at,
-
-      // Joined fields
-      batch_id: batch?.id,
-      batch_name: batch ? `${batch.name} ${batch.section || ''}`.trim() : undefined,
-      current_semester: batch?.current_semester,
-      department_id: department?.id,
-      department_name: department?.name,
-      tutor_id: tutor?.id,
-      tutor_name: tutor ? `${tutor.first_name} ${tutor.last_name || ''}`.trim() : undefined,
-      hod_id: hod?.id,
-      hod_name: hod ? `${hod.first_name} ${hod.last_name || ''}`.trim() : undefined,
-    } as StudentDetails;
-  });
-};
-
 export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
   const { email, ...metaData } = profileData;
+
+  // Check if email already exists
+  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
+    perPage: 1,
+    page: 1,
+    search: email,
+  });
+
+  if (usersError) {
+    console.error("Error checking for existing user:", usersError);
+    showError("Failed to check for existing user: " + usersError.message);
+    return null;
+  }
+
+  if (existingUsers?.users && existingUsers.users.length > 0) {
+    showError(`An account with email "${email}" already exists.`);
+    return null;
+  }
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: email!, // email is required for signup
@@ -645,6 +628,24 @@ export const deleteTutor = async (tutorId: string): Promise<boolean> => {
 
 export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
   const { email, ...metaData } = profileData;
+
+  // Check if email already exists
+  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
+    perPage: 1,
+    page: 1,
+    search: email,
+  });
+
+  if (usersError) {
+    console.error("Error checking for existing user:", usersError);
+    showError("Failed to check for existing user: " + usersError.message);
+    return null;
+  }
+
+  if (existingUsers?.users && existingUsers.users.length > 0) {
+    showError(`An account with email "${email}" already exists.`);
+    return null;
+  }
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: email!, // email is required for signup
