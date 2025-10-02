@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,18 +53,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchProfiles, fetchDepartments, createHod, updateHod, deleteHod } from "@/data/appData";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { fetchProfiles, fetchDepartments, createHod, updateHod, updateUserPassword } from "@/data/appData";
 import { Profile, Department } from "@/lib/types";
 import { showSuccess, showError } from "@/utils/toast";
+
+const formSchema = z.object({
+  first_name: z.string().min(1, { message: "First name is required." }),
+  last_name: z.string().optional(),
+  username: z.string().min(1, { message: "Username is required." }),
+  department_id: z.string().min(1, { message: "Department is required." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  phone_number: z.string().min(10, { message: "Phone number must be at least 10 digits." }).optional().or(z.literal("")),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional(),
+});
 
 const ManageFaculties = () => {
   const [faculties, setFaculties] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Profile | null>(null);
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      username: "",
+      department_id: "",
+      email: "",
+      phone_number: "",
+      password: "",
+    },
+  });
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -77,44 +111,78 @@ const ManageFaculties = () => {
     fetchAllData();
   }, []);
 
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const facultyData: Omit<Profile, 'id' | 'created_at' | 'updated_at' | 'role'> = {
-      first_name: formData.get("first_name") as string,
-      last_name: formData.get("last_name") as string,
-      username: formData.get("username") as string,
-      department_id: formData.get("department_id") as string,
-      email: formData.get("email") as string,
-      phone_number: formData.get("phone_number") as string,
-    };
-
-    if (editingFaculty) {
-      const updated = await updateHod(editingFaculty.id, facultyData);
-      if (updated) {
-        showSuccess("Faculty details updated successfully.");
-        fetchAllData();
-      } else {
-        showError("Failed to update faculty details.");
-      }
-    } else {
-      // For new HOD, include password
-      if (!password) {
-        showError("Password is required for new HODs.");
-        return;
-      }
-      const created = await createHod({ ...facultyData, role: 'hod' }, password);
-      if (created) {
-        showSuccess("New faculty added successfully.");
-        fetchAllData();
-      } else {
-        showError("Failed to add new faculty.");
-      }
+  useEffect(() => {
+    if (isAddEditDialogOpen && editingFaculty) {
+      form.reset({
+        first_name: editingFaculty.first_name || "",
+        last_name: editingFaculty.last_name || "",
+        username: editingFaculty.username || "",
+        department_id: editingFaculty.department_id || "",
+        email: editingFaculty.email || "",
+        phone_number: editingFaculty.phone_number || "",
+        password: "", // Password is never pre-filled for security
+      });
+    } else if (isAddEditDialogOpen && !editingFaculty) {
+      form.reset({
+        first_name: "",
+        last_name: "",
+        username: "",
+        department_id: "",
+        email: "",
+        phone_number: "",
+        password: "",
+      });
     }
+  }, [isAddEditDialogOpen, editingFaculty, form]);
 
-    setIsAddEditDialogOpen(false);
-    setEditingFaculty(null);
-    setPassword(""); // Clear password field
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    try {
+      const facultyData: Omit<Profile, 'id' | 'created_at' | 'updated_at' | 'role'> = {
+        first_name: values.first_name,
+        last_name: values.last_name,
+        username: values.username,
+        department_id: values.department_id,
+        email: values.email,
+        phone_number: values.phone_number,
+      };
+
+      if (editingFaculty) {
+        const updated = await updateHod(editingFaculty.id, facultyData);
+        if (!updated) {
+          showError("Failed to update faculty details.");
+          return;
+        }
+
+        if (values.password) {
+          const passwordUpdated = await updateUserPassword(editingFaculty.id, values.password);
+          if (!passwordUpdated) {
+            showError("Failed to update faculty password.");
+          }
+        }
+        showSuccess("Faculty details updated successfully.");
+      } else {
+        if (!values.password) {
+          showError("Password is required for new HODs.");
+          return;
+        }
+        const created = await createHod({ ...facultyData, role: 'hod' }, values.password);
+        if (!created) {
+          showError("Failed to add new faculty.");
+          return;
+        }
+        showSuccess("New faculty added successfully.");
+      }
+
+      setIsAddEditDialogOpen(false);
+      setEditingFaculty(null);
+      form.reset();
+      fetchAllData();
+    } catch (error: any) {
+      showError(error.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async (facultyId: string, facultyName: string) => {
@@ -150,7 +218,7 @@ const ManageFaculties = () => {
             setIsAddEditDialogOpen(isOpen);
             if (!isOpen) {
               setEditingFaculty(null);
-              setPassword(""); // Clear password on dialog close
+              form.reset(); // Reset form state when dialog closes
             }
           }}
         >
@@ -163,114 +231,155 @@ const ManageFaculties = () => {
                 {editingFaculty ? "Edit HOD Details" : "Add New HOD"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSave}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="first_name">First Name</Label>
-                    <Input
-                      id="first_name"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
                       name="first_name"
-                      defaultValue={editingFaculty?.first_name || ""}
-                      required
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={isSubmitting} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="last_name">Last Name</Label>
-                    <Input
-                      id="last_name"
+                    <FormField
+                      control={form.control}
                       name="last_name"
-                      defaultValue={editingFaculty?.last_name || ""}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={isSubmitting} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
+                  <FormField
+                    control={form.control}
                     name="username"
-                    defaultValue={editingFaculty?.username || ""}
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isSubmitting} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="department_id">Department</Label>
-                  <Select
+                  <FormField
+                    control={form.control}
                     name="department_id"
-                    defaultValue={editingFaculty?.department_id || ""}
-                    required
-                  >
-                    <SelectTrigger id="department_id">
-                      <SelectValue placeholder="Select Department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Department" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                     name="email"
-                    type="email"
-                    defaultValue={editingFaculty?.email || ""}
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} disabled={isSubmitting} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone_number">Phone Number</Label>
-                  <Input
-                    id="phone_number"
+                  <FormField
+                    control={form.control}
                     name="phone_number"
-                    defaultValue={editingFaculty?.phone_number || ""}
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isSubmitting} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Password {editingFaculty ? "(Leave blank to keep current)" : ""}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              {...field}
+                              required={!editingFaculty}
+                              autoComplete="new-password"
+                              disabled={isSubmitting}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-primary/10"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              disabled={isSubmitting}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">Toggle password visibility</span>
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                {!editingFaculty && ( // Only show password field for new HODs
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required={!editingFaculty}
-                        autoComplete="new-password"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-primary/10"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">Toggle password visibility</span>
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    Cancel
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={isSubmitting}>
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save"}
                   </Button>
-                </DialogClose>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            </form>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </CardHeader>
