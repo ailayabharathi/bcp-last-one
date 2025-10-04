@@ -147,6 +147,69 @@ export const fetchStudentDetails = async (studentId: string): Promise<StudentDet
   } as StudentDetails;
 };
 
+export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> => {
+  const { data, error } = await supabase
+    .from("students")
+    .select(`
+      id,
+      register_number,
+      parent_name,
+      profiles (
+        first_name,
+        last_name,
+        username,
+        email,
+        phone_number,
+        avatar_url,
+        role
+      ),
+      batches (
+        name,
+        section,
+        current_semester,
+        departments (
+          name
+        )
+      ),
+      tutors:profiles!students_tutor_id_fkey (
+        first_name,
+        last_name
+      ),
+      hods:profiles!students_hod_id_fkey (
+        first_name,
+        last_name
+      )
+    `);
+
+  if (error) {
+    console.error("Error fetching all students with details:", error);
+    throw new Error("Failed to fetch all students with details: " + error.message);
+  }
+
+  return data.map((student: any) => ({
+    id: student.id,
+    register_number: student.register_number,
+    parent_name: student.parent_name,
+    first_name: student.profiles?.first_name,
+    last_name: student.profiles?.last_name,
+    username: student.profiles?.username,
+    email: student.profiles?.email,
+    phone_number: student.profiles?.phone_number,
+    avatar_url: student.profiles?.avatar_url,
+    role: student.profiles?.role,
+    batch_id: student.batches?.id, // Assuming batch_id is needed, but not directly selected in the query above
+    batch_name: student.batches ? `${student.batches.name} ${student.batches.section || ''}`.trim() : undefined,
+    current_semester: student.batches?.current_semester,
+    department_id: student.batches?.departments?.id, // Assuming department_id is needed
+    department_name: student.batches?.departments?.name,
+    tutor_id: student.tutors?.id, // Assuming tutor_id is needed
+    tutor_name: student.tutors ? `${student.tutors.first_name} ${student.tutors.last_name || ''}`.trim() : undefined,
+    hod_id: student.hods?.id, // Assuming hod_id is needed
+    hod_name: student.hods ? `${student.hods.first_name} ${student.hods.last_name || ''}`.trim() : undefined,
+  })) as StudentDetails[];
+};
+
+
 export const fetchTutorDetails = async (tutorId: string): Promise<TutorDetails | null> => {
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")

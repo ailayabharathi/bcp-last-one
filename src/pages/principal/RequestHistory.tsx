@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchRequests, fetchAllStudentsWithDetails, fetchBatches, fetchDepartments } from "@/data/appData";
+import { fetchRequests, fetchAllStudentsWithDetails, fetchBatches, fetchDepartments } from "@/data/appData"; // Updated import
 import { getStatusVariant, formatDateToIndian } from "@/lib/utils";
 import { BonafideRequest, StudentDetails, Department, Batch } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,7 @@ const PrincipalRequestHistory = () => {
     const fetchData = async () => {
       setLoading(true);
       const fetchedRequests = await fetchRequests();
-      const fetchedStudents = await fetchAllStudentsWithDetails();
+      const fetchedStudents = await fetchAllStudentsWithDetails(); // Using the new function
       const fetchedDepartments = await fetchDepartments();
       const fetchedBatches = await fetchBatches();
 
