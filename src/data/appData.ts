@@ -211,12 +211,12 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
 
 
 export const fetchTutorDetails = async (tutorId: string): Promise<TutorDetails | null> => {
+  // 1. Fetch the base profile data for the tutor
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select(`
       *,
-      departments(name),
-      batches(name, section)
+      departments(name)
     `)
     .eq("id", tutorId)
     .single();
@@ -227,12 +227,26 @@ export const fetchTutorDetails = async (tutorId: string): Promise<TutorDetails |
   }
 
   const department = profileData.departments as unknown as Department;
-  const batch = profileData.batches as unknown as Batch;
+
+  // 2. Separately fetch the batch(es) assigned to this tutor
+  const { data: assignedBatches, error: batchesError } = await supabase
+    .from("batches")
+    .select(`name, section`)
+    .eq("tutor_id", tutorId);
+
+  if (batchesError) {
+    console.warn("Error fetching assigned batches for tutor:", batchesError);
+  }
+
+  // Combine batch names into a single string if multiple, or just the first one
+  const batchAssignedName = assignedBatches && assignedBatches.length > 0
+    ? assignedBatches.map(b => `${b.name} ${b.section || ''}`.trim()).join(', ')
+    : undefined;
 
   return {
     ...profileData,
     department_name: department?.name,
-    batch_assigned_name: batch ? `${batch.name} ${batch.section || ''}`.trim() : undefined,
+    batch_assigned_name: batchAssignedName,
   } as TutorDetails;
 };
 
