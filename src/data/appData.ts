@@ -155,7 +155,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
       id,
       register_number,
       parent_name,
-      student_profile:profiles!id (
+      student_profile:profiles!profiles_id_fkey (
         first_name,
         last_name,
         username,
@@ -853,7 +853,7 @@ export const updateHod = async (hodId: string, updates: Partial<Profile>): Promi
 export const deleteHod = async (hodId: string): Promise<boolean> => {
   // When deleting a HOD, we should also delete their auth.users entry via Edge Function.
   const { error } = await supabase.functions.invoke('manage-users', {
-    body: JSON_stringify({
+    body: JSON.stringify({
       action: 'deleteUser',
       payload: { userId: hodId },
     }),
