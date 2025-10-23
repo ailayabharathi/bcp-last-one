@@ -98,6 +98,9 @@ const NewRequest = () => {
     );
   }
 
+  // Derive academic year range from batch name
+  const academicYearRange = studentDetails.batch_name?.split(' ')[0] || 'N/A';
+
   return (
     <Card>
       <form onSubmit={handleSubmit}>
@@ -124,6 +127,16 @@ const NewRequest = () => {
             <div className="grid gap-2">
               <Label htmlFor="department-name">Department</Label>
               <Input id="department-name" defaultValue={studentDetails.department_name || 'N/A'} disabled />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="batch-name">Batch</Label>
+                <Input id="batch-name" defaultValue={studentDetails.batch_name || 'N/A'} disabled />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="academic-year">Academic Year</Label>
+                <Input id="academic-year" defaultValue={academicYearRange} disabled />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
