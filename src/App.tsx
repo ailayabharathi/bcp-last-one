@@ -19,7 +19,7 @@ import PrincipalLayout from "@/components/layouts/PrincipalLayout";
 // Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminStudentManagement from "@/pages/admin/StudentManagement";
-import AdminBatchManagement from "@/pages/admin/BatchManagement";
+// import AdminBatchManagement from "@/pages/admin/BatchManagement"; // Removed import
 import AdminManageFaculties from "@/pages/admin/ManageFaculties";
 import AdminManageTutors from "@/pages/admin/ManageTutors";
 import AdminDepartmentManagement from "@/pages/admin/DepartmentManagement";
@@ -119,7 +119,8 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="student-management" element={<AdminStudentManagement />} />
-        <Route path="batch-management" element={<AdminBatchManagement />} />
+        {/* Removed Batch Management Route */}
+        {/* <Route path="batch-management" element={<AdminBatchManagement />} /> */}
         <Route path="manage-faculties" element={<AdminManageFaculties />} />
         <Route path="manage-tutors" element={<AdminManageTutors />} />
         <Route path="department-management" element={<AdminDepartmentManagement />} />

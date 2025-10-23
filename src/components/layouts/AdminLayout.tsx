@@ -10,7 +10,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { Outlet } from "react-router-dom";
-import { NavItem } from "@/lib/types";
+import { NavItem } => "@/lib/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +25,12 @@ const navItems: NavItem[] = [
     href: "/admin/student-management",
     icon: <Users className="h-4 w-4" />,
   },
-  {
-    title: "Batch Management",
-    href: "/admin/batch-management",
-    icon: <ClipboardList className="h-4 w-4" />,
-  },
+  // Removed Batch Management
+  // {
+  //   title: "Batch Management",
+  //   href: "/admin/batch-management",
+  //   icon: <ClipboardList className="h-4 w-4" />,
+  // },
   {
     title: "Manage Faculties",
     href: "/admin/manage-faculties",
