@@ -8,8 +8,8 @@ import {
   StudentDetails,
   TutorDetails,
   HodDetails,
-  RequestStatus, // Imported RequestStatus
-  AdminListUsersOptions, // Imported AdminListUsersOptions
+  RequestStatus,
+  AdminListUsersOptions,
 } from "@/lib/types";
 import { showError } from "@/utils/toast";
 
@@ -149,65 +149,74 @@ export const fetchStudentDetails = async (studentId: string): Promise<StudentDet
 };
 
 export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> => {
-  const { data, error } = await supabase
+  // Fetch all student-specific data
+  const { data: studentsData, error: studentsError } = await supabase
     .from("students")
     .select(`
       id,
       register_number,
       parent_name,
-      student_profile:profiles!profiles_id_fkey (
-        first_name,
-        last_name,
-        username,
-        email,
-        phone_number,
-        avatar_url,
-        role
-      ),
-      batches (
-        name,
-        section,
-        current_semester,
-        departments (
-          name
-        )
-      ),
-      tutors:profiles!students_tutor_id_fkey (
-        first_name,
-        last_name
-      ),
-      hods:profiles!students_hod_id_fkey (
-        first_name,
-        last_name
-      )
+      batch_id,
+      tutor_id,
+      hod_id
     `);
 
-  if (error) {
-    console.error("Error fetching all students with details:", error);
-    throw new Error("Failed to fetch all students with details: " + error.message);
+  if (studentsError) {
+    console.error("Error fetching all students data:", studentsError);
+    throw new Error("Failed to fetch all students data: " + studentsError.message);
   }
 
-  return data.map((student: any) => ({
-    id: student.id,
-    register_number: student.register_number,
-    parent_name: student.parent_name,
-    first_name: student.student_profile?.first_name,
-    last_name: student.student_profile?.last_name,
-    username: student.student_profile?.username,
-    email: student.student_profile?.email,
-    phone_number: student.student_profile?.phone_number,
-    avatar_url: student.student_profile?.avatar_url,
-    role: student.student_profile?.role,
-    batch_id: student.batches?.id, // Assuming batch_id is needed, but not directly selected in the query above
-    batch_name: student.batches ? `${student.batches.name} ${student.batches.section || ''}`.trim() : undefined,
-    current_semester: student.batches?.current_semester,
-    department_id: student.batches?.departments?.id, // Assuming department_id is needed
-    department_name: student.batches?.departments?.name,
-    tutor_id: student.tutors?.id, // Assuming tutor_id is needed
-    tutor_name: student.tutors ? `${student.tutors.first_name} ${student.tutors.last_name || ''}`.trim() : undefined,
-    hod_id: student.hods?.id, // Assuming hod_id is needed
-    hod_name: student.hods ? `${student.hods.first_name} ${student.hods.last_name || ''}`.trim() : undefined,
-  })) as StudentDetails[];
+  // Fetch all profiles (for students, tutors, HODs)
+  const { data: profilesData, error: profilesError } = await supabase
+    .from("profiles")
+    .select(`id, first_name, last_name, username, email, phone_number, avatar_url, role, department_id`);
+
+  if (profilesError) {
+    console.error("Error fetching all profiles:", profilesError);
+    throw new Error("Failed to fetch all profiles: " + profilesError.message);
+  }
+
+  // Fetch all batches with department names
+  const { data: batchesData, error: batchesError } = await supabase
+    .from("batches")
+    .select(`id, name, section, current_semester, departments(name)`);
+
+  if (batchesError) {
+    console.error("Error fetching all batches:", batchesError);
+    throw new Error("Failed to fetch all batches: " + batchesError.message);
+  }
+
+  const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+  const batchesMap = new Map(batchesData.map(b => [b.id, b]));
+
+  return studentsData.map((student: any) => {
+    const studentProfile = profilesMap.get(student.id);
+    const batch = batchesMap.get(student.batch_id);
+    const tutorProfile = profilesMap.get(student.tutor_id);
+    const hodProfile = profilesMap.get(student.hod_id);
+
+    return {
+      id: student.id,
+      register_number: student.register_number,
+      parent_name: student.parent_name,
+      first_name: studentProfile?.first_name,
+      last_name: studentProfile?.last_name,
+      username: studentProfile?.username,
+      email: studentProfile?.email,
+      phone_number: studentProfile?.phone_number,
+      avatar_url: studentProfile?.avatar_url,
+      role: studentProfile?.role,
+      batch_id: batch?.id,
+      batch_name: batch ? `${batch.name} ${batch.section || ''}`.trim() : undefined,
+      current_semester: batch?.current_semester,
+      department_id: batch?.departments?.id, // Assuming department_id is needed
+      department_name: batch?.departments?.name,
+      tutor_id: tutorProfile?.id,
+      tutor_name: tutorProfile ? `${tutorProfile.first_name} ${tutorProfile.last_name || ''}`.trim() : undefined,
+      hod_id: hodProfile?.id,
+      hod_name: hodProfile ? `${hodProfile.first_name} ${hodProfile.last_name || ''}`.trim() : undefined,
+    } as StudentDetails;
+  });
 };
 
 
