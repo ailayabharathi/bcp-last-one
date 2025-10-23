@@ -59,12 +59,14 @@ const BatchManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSemesterDialogOpen, setIsSemesterDialogOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
-  const [newBatch, setNewBatch] = useState<Partial<Batch>>({
-    name: "",
-    total_sections: 1,
-    department_id: "",
-  });
+  const [newBatchDepartmentId, setNewBatchDepartmentId] = useState("");
+  const [newBatchTotalSections, setNewBatchTotalSections] = useState(1);
+  const [newBatchStartYear, setNewBatchStartYear] = useState<string>("");
+  const [newBatchEndYear, setNewBatchEndYear] = useState<string>("");
   const [loading, setLoading] = useState(true);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i); // e.g., 2019-2028
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -250,18 +252,21 @@ const BatchManagement = () => {
   };
 
   const handleAddNewBatch = async () => {
-    const { name: batchName, total_sections, department_id } = newBatch;
-
-    if (!batchName || !department_id) {
-      showError("Batch name and Department are required.");
+    if (!newBatchDepartmentId || !newBatchStartYear || !newBatchEndYear) {
+      showError("Department, Start Year, and End Year are required.");
+      return;
+    }
+    if (Number(newBatchStartYear) >= Number(newBatchEndYear)) {
+      showError("End Year must be after Start Year.");
       return;
     }
 
+    const batchName = `${newBatchStartYear}-${newBatchEndYear}`;
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const newSectionsToCreate: Omit<Batch, 'id' | 'created_at'>[] = [];
 
-    for (let i = 0; i < (total_sections || 1); i++) {
-      const sectionName = (total_sections || 1) > 1 ? alphabet[i] : undefined;
+    for (let i = 0; i < newBatchTotalSections; i++) {
+      const sectionName = newBatchTotalSections > 1 ? alphabet[i] : undefined;
       const fullBatchName = sectionName
         ? `${batchName} ${sectionName}`
         : batchName;
@@ -272,13 +277,13 @@ const BatchManagement = () => {
         name: batchName,
         section: sectionName,
         tutor_id: null, // Unassigned by default
-        total_sections: total_sections || 1,
+        total_sections: newBatchTotalSections,
         student_count: 0,
         status: "Active",
         current_semester: currentSemester,
         semester_from_date: from,
         semester_to_date: to,
-        department_id: department_id,
+        department_id: newBatchDepartmentId,
       });
     }
 
@@ -288,10 +293,13 @@ const BatchManagement = () => {
       showError("Failed to create new batch: " + error.message);
     } else {
       showSuccess(
-        `Batch "${batchName}" with ${total_sections} section(s) created successfully.`
+        `Batch "${batchName}" with ${newBatchTotalSections} section(s) created successfully.`
       );
       setIsAddDialogOpen(false);
-      setNewBatch({ name: "", total_sections: 1, department_id: "" });
+      setNewBatchDepartmentId("");
+      setNewBatchTotalSections(1);
+      setNewBatchStartYear("");
+      setNewBatchEndYear("");
       fetchAllData(); // Refresh all data
     }
   };
@@ -314,7 +322,18 @@ const BatchManagement = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Batch Management</CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={(isOpen) => {
+              setIsAddDialogOpen(isOpen);
+              if (!isOpen) {
+                setNewBatchDepartmentId("");
+                setNewBatchTotalSections(1);
+                setNewBatchStartYear("");
+                setNewBatchEndYear("");
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button>Add New Batch</Button>
             </DialogTrigger>
@@ -322,17 +341,15 @@ const BatchManagement = () => {
               <DialogHeader>
                 <DialogTitle>Add New Batch</DialogTitle>
                 <DialogDescription>
-                  Enter the details for the new batch, including its name, department, and number of sections.
+                  Enter the details for the new batch, including its department, academic year range, and number of sections.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="new-batch-department">Department</Label>
                   <Select
-                    value={newBatch.department_id}
-                    onValueChange={(value) =>
-                      setNewBatch({ ...newBatch, department_id: value })
-                    }
+                    value={newBatchDepartmentId}
+                    onValueChange={setNewBatchDepartmentId}
                     required
                   >
                     <SelectTrigger id="new-batch-department">
@@ -347,18 +364,45 @@ const BatchManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="new-batch-name">
-                    Batch (e.g., 2024-2028)
-                  </Label>
-                  <Input
-                    id="new-batch-name"
-                    value={newBatch.name}
-                    onChange={(e) =>
-                      setNewBatch({ ...newBatch, name: e.target.value })
-                    }
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="new-batch-start-year">Batch Start Year</Label>
+                    <Select
+                      value={newBatchStartYear}
+                      onValueChange={setNewBatchStartYear}
+                      required
+                    >
+                      <SelectTrigger id="new-batch-start-year">
+                        <SelectValue placeholder="Select Start Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="new-batch-end-year">Batch End Year</Label>
+                    <Select
+                      value={newBatchEndYear}
+                      onValueChange={setNewBatchEndYear}
+                      required
+                    >
+                      <SelectTrigger id="new-batch-end-year">
+                        <SelectValue placeholder="Select End Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="new-total-sections">Total Sections</Label>
@@ -366,12 +410,9 @@ const BatchManagement = () => {
                     id="new-total-sections"
                     type="number"
                     min="1"
-                    value={newBatch.total_sections}
+                    value={newBatchTotalSections}
                     onChange={(e) =>
-                      setNewBatch({
-                        ...newBatch,
-                        total_sections: Number(e.target.value),
-                      })
+                      setNewBatchTotalSections(Number(e.target.value))
                     }
                   />
                 </div>
@@ -532,6 +573,14 @@ const BatchManagement = () => {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="edit-batch-name">Batch Name</Label>
+              <Input
+                id="edit-batch-name"
+                value={editingBatch?.name || ""}
+                disabled // Made non-editable
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="total-sections">Total Sections for Batch</Label>
               <Input
                 id="total-sections"
@@ -571,6 +620,14 @@ const BatchManagement = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-batch-display">Batch</Label>
+              <Input
+                id="edit-batch-display"
+                value={`${editingBatch?.name || ''} ${editingBatch?.section || ''}`.trim()}
+                disabled // Made non-editable
+              />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-tutor">Assign Tutor</Label>
               <Select
