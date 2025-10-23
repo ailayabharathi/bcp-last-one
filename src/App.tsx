@@ -77,7 +77,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
 const App = () => {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SessionContextProvider>
           <AppRoutes />
         </SessionContextProvider>
