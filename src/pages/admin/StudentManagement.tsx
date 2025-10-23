@@ -140,22 +140,37 @@ const StudentManagement = () => {
     try {
       const parsedStudents = await parseStudentFile(uploadFile);
       const newStudents: StudentDetails[] = [];
-      for (const student of parsedStudents) {
-        // Find department and batch IDs based on names from template
-        const department = departments.find(d => d.id === student.department_id);
-        const batch = batches.find(b => b.id === student.batch_id);
-        const hod = hods.find(h => h.department_id === department?.id);
+      const errors: string[] = [];
 
-        if (!department || !batch || !student.email || !student.register_number) { // Added checks for email and register_number
-          console.warn(`Skipping student ${student.first_name} ${student.last_name} due to missing required data (email, register number, department, or batch).`);
+      for (const student of parsedStudents) {
+        if (!student.email || !student.register_number || !student.department_name || !student.batch_name || !student.password) {
+          errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''} due to missing required data (email, register number, department name, batch name, or password).`);
           continue;
         }
+
+        const department = departments.find(d => d.name === student.department_name);
+        if (!department) {
+          errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''}: Department "${student.department_name}" not found.`);
+          continue;
+        }
+
+        // Find batch by name and department_id
+        const batch = batches.find(b =>
+          `${b.name} ${b.section || ''}`.trim() === student.batch_name?.trim() &&
+          b.department_id === department.id
+        );
+        if (!batch) {
+          errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''}: Batch "${student.batch_name}" not found in department "${department.name}".`);
+          continue;
+        }
+
+        const hod = hods.find(h => h.department_id === department.id);
 
         const createdStudent = await createStudent(
           {
             first_name: student.first_name,
             last_name: student.last_name,
-            username: student.username || `${student.first_name}.${student.register_number}`, // Generate username if missing
+            username: student.username || `${student.first_name}.${student.register_number}`,
             email: student.email,
             phone_number: student.phone_number,
             department_id: department.id,
@@ -166,16 +181,25 @@ const StudentManagement = () => {
             register_number: student.register_number,
             parent_name: student.parent_name,
             batch_id: batch.id,
-            tutor_id: batch.tutor_id,
-            hod_id: hod?.id,
-          }
-          // No password passed here, so createStudent will generate one
+            tutor_id: batch.tutor_id, // Assign tutor from batch
+            hod_id: hod?.id, // Assign HOD from department
+          },
+          student.password // Pass the password from the Excel file
         );
         if (createdStudent) {
           newStudents.push(createdStudent);
+        } else {
+          errors.push(`Failed to create student ${student.first_name || ''} ${student.last_name || ''} (email: ${student.email}).`);
         }
       }
-      showSuccess(`${newStudents.length} students uploaded successfully!`);
+
+      if (newStudents.length > 0) {
+        showSuccess(`${newStudents.length} students uploaded successfully!`);
+      }
+      if (errors.length > 0) {
+        showError(`Some students could not be uploaded: ${errors.join('; ')}`);
+      }
+      
       setUploadFile(null);
       setIsUploadDialogOpen(false);
       fetchAllData(); // Refresh student list
@@ -486,7 +510,7 @@ const StudentManagement = () => {
                       {filteredHodsByDepartment.length > 0 ? (
                         filteredHodsByDepartment.map((hod) => (
                           <SelectItem key={hod.id} value={hod.id}>
-                            {`${hod.first_name} ${hod.last_name || ''}`.trim()}
+                            {`${hod.first_name} ${hod.first_name || ''}`.trim()}
                           </SelectItem>
                         ))
                       ) : (

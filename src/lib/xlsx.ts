@@ -9,9 +9,9 @@ const studentTemplateHeaders = [
   "phone_number",
   "register_number",
   "parent_name",
-  "department_id", // Use department_id for linking
-  "batch_id", // Use batch_id for linking
-  // tutor_id and hod_id will be assigned by admin, not directly in template
+  "department_name", // Changed to name for user-friendliness
+  "batch_name",      // Changed to name for user-friendliness
+  "password",        // New: Password for the student
 ];
 
 /**
@@ -27,9 +27,9 @@ export const downloadStudentTemplate = () => {
 /**
  * Parses an uploaded XLSX file and returns an array of student profiles.
  * @param file The uploaded file object.
- * @returns A promise that resolves to an array of StudentDetails objects.
+ * @returns A promise that resolves to an array of objects with student details, including department_name, batch_name, and password.
  */
-export const parseStudentFile = (file: File): Promise<Partial<StudentDetails>[]> => {
+export const parseStudentFile = (file: File): Promise<Partial<StudentDetails & { password?: string; department_name?: string; batch_name?: string }>[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -38,7 +38,7 @@ export const parseStudentFile = (file: File): Promise<Partial<StudentDetails>[]>
         const workbook = xlsx.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const json = xlsx.utils.sheet_to_json<Partial<StudentDetails>>(worksheet);
+        const json = xlsx.utils.sheet_to_json<Partial<StudentDetails & { password?: string; department_name?: string; batch_name?: string }>>(worksheet);
         resolve(json);
       } catch (error) {
         reject(error);
