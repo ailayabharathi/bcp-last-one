@@ -419,6 +419,7 @@ const StudentManagement = () => {
                 <div className="grid gap-2">
                   <Label htmlFor="batch_id">Batch</Label>
                   <Select
+                    key={newStudentData.department_id + "-batch"} // Added key
                     value={newStudentData.batch_id || ""}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, batch_id: value })}
                     disabled={!newStudentData.department_id}
@@ -439,6 +440,7 @@ const StudentManagement = () => {
                 <div className="grid gap-2">
                   <Label htmlFor="tutor_id">Tutor (Optional)</Label>
                   <Select
+                    key={newStudentData.department_id + "-tutor"} // Added key
                     value={newStudentData.tutor_id || "unassigned"}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, tutor_id: value === "unassigned" ? undefined : value })}
                     disabled={!newStudentData.department_id}
@@ -459,6 +461,7 @@ const StudentManagement = () => {
                 <div className="grid gap-2">
                   <Label htmlFor="hod_id">HOD (Optional)</Label>
                   <Select
+                    key={newStudentData.department_id + "-hod"} // Added key
                     value={newStudentData.hod_id || "unassigned"}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, hod_id: value === "unassigned" ? undefined : value })}
                     disabled={!newStudentData.department_id}
