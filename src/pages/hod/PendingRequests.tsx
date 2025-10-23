@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -172,6 +173,9 @@ const HodPendingRequests = () => {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Review Request</DialogTitle>
+            <DialogDescription>
+              Review the details of the student's request before taking action.
+            </DialogDescription>
           </DialogHeader>
           {selectedRequest && <RequestDetailsView request={selectedRequest} />}
           <DialogFooter>
@@ -200,6 +204,9 @@ const HodPendingRequests = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Select Certificate Template</DialogTitle>
+            <DialogDescription>
+              Choose the appropriate certificate template for this request.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Label htmlFor="template-select">Template</Label>
@@ -231,6 +238,9 @@ const HodPendingRequests = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reason for Return</DialogTitle>
+            <DialogDescription>
+              Provide a clear reason for returning this request to the student.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Label htmlFor="return-reason">

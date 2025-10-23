@@ -30,6 +30,7 @@ import {
   DialogFooter,
   DialogClose,
   DialogTrigger,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -320,6 +321,9 @@ const BatchManagement = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Batch</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the new batch, including its name, department, and number of sections.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
@@ -511,6 +515,9 @@ const BatchManagement = () => {
             <DialogTitle>
               Edit Batch: {editingBatch?.name}
             </DialogTitle>
+            <DialogDescription>
+              Adjust the total number of sections for this batch.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -559,6 +566,9 @@ const BatchManagement = () => {
             <DialogTitle>
               Edit Semester: {editingBatch?.name} - {editingBatch?.section}
             </DialogTitle>
+            <DialogDescription>
+              Update the assigned tutor, current semester, and academic year range for this batch section.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

@@ -22,6 +22,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +114,9 @@ const DepartmentManagement = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Department</DialogTitle>
+              <DialogDescription>
+                Fill in the details to add a new academic department to the college.
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">

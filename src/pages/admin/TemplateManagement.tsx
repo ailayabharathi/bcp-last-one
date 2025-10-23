@@ -22,6 +22,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -244,6 +245,9 @@ const TemplateManagement = () => {
             <DialogTitle>
               {dialogMode === "create" ? "Create New" : "Edit"} Template
             </DialogTitle>
+            <DialogDescription>
+              {dialogMode === "create" ? "Define a new certificate template, either HTML-based or by uploading a file." : "Modify an existing certificate template."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

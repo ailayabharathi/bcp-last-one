@@ -29,6 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -220,6 +221,9 @@ const ManageTutors = () => {
               <DialogTitle>
                 {editingTutor ? "Edit Tutor Details" : "Add New Tutor"}
               </DialogTitle>
+              <DialogDescription>
+                {editingTutor ? "Update the details for this tutor." : "Fill in the details to add a new tutor to the system."}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSave}>
               <div className="grid gap-4 py-4">

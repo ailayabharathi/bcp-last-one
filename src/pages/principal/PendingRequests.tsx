@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -209,6 +210,9 @@ const PrincipalPendingRequests = () => {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Review Request</DialogTitle>
+            <DialogDescription>
+              Review the details of the student's request before taking action.
+            </DialogDescription>
           </DialogHeader>
           {selectedRequest && <RequestDetailsView request={selectedRequest} />}
           <DialogFooter>
@@ -244,6 +248,9 @@ const PrincipalPendingRequests = () => {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Approve Certificate</DialogTitle>
+            <DialogDescription>
+              Review the certificate content and choose whether to add an e-signature before approving and downloading.
+            </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="py-4">
@@ -303,6 +310,9 @@ const PrincipalPendingRequests = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reason for Return</DialogTitle>
+            <DialogDescription>
+              Provide a clear reason for returning this request to the HOD.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Label htmlFor="return-reason">

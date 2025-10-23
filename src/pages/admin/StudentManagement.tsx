@@ -29,6 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -319,6 +320,9 @@ const StudentManagement = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Bulk Upload Students</DialogTitle>
+                <DialogDescription>
+                  Upload an XLSX file to add multiple students at once. Ensure your file follows the provided template.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <p className="text-sm text-muted-foreground">
@@ -357,6 +361,9 @@ const StudentManagement = () => {
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Add New Student</DialogTitle>
+                <DialogDescription>
+                  Fill in the details to add a new student to the system.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 overflow-y-auto max-h-[70vh]"> {/* Added overflow-y-auto and max-h */}
                 <div className="grid grid-cols-2 gap-4">

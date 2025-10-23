@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogDescription, // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -178,6 +179,9 @@ const TutorPendingRequests = () => {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Review Request</DialogTitle>
+            <DialogDescription>
+              Review the details of the student's request before taking action.
+            </DialogDescription>
           </DialogHeader>
           {selectedRequest && <RequestDetailsView request={selectedRequest} />}
           <DialogFooter>
@@ -193,6 +197,9 @@ const TutorPendingRequests = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reason for Return</DialogTitle>
+            <DialogDescription>
+              Provide a clear reason for returning this request to the student.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Label htmlFor="return-reason">
