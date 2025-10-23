@@ -155,11 +155,16 @@ const StudentManagement = () => {
           continue;
         }
 
-        // Find batch by name and department_id
-        const batch = batches.find(b =>
-          `${b.name}${b.section ? ' ' + b.section : ''}`.trim() === student.batch_name?.trim() &&
-          b.department_id === department.id
-        );
+        // Find batch by name and department_id - improved matching logic
+        const batch = batches.find(b => {
+          const dbBatchFullName = `${b.name || ''}${b.section ? ' ' + b.section : ''}`.trim().toLowerCase();
+          const excelBatchFullName = student.batch_name?.trim().toLowerCase();
+          
+          console.log(`Dyad Debug: Comparing Excel batch "${excelBatchFullName}" with DB batch "${dbBatchFullName}" (ID: ${b.id}, Dept ID: ${b.department_id}) for department ID "${department.id}"`);
+
+          return dbBatchFullName === excelBatchFullName && b.department_id === department.id;
+        });
+
         if (!batch) {
           errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''}: Batch "${student.batch_name}" not found in department "${department.name}". Please ensure the batch name includes the section (e.g., "2024-2028 A") if applicable.`);
           continue;
