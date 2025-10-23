@@ -78,6 +78,7 @@ const StudentManagement = () => {
   });
   const [newStudentPassword, setNewStudentPassword] = useState(""); // New state for password
   const [showPassword, setShowPassword] = useState(false); // For toggling password visibility
+  const [selectedBatchYears, setSelectedBatchYears] = useState<{ start?: string; end?: string } | null>(null); // New state for batch years
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
@@ -252,6 +253,7 @@ const StudentManagement = () => {
           tutor_id: undefined, hod_id: undefined,
         });
         setNewStudentPassword(""); // Clear password
+        setSelectedBatchYears(null); // Clear batch years
         fetchAllData(); // Refresh student list
       } else {
         showError("Failed to add single student.");
@@ -437,7 +439,10 @@ const StudentManagement = () => {
                   <Label htmlFor="department_id">Department</Label>
                   <Select
                     value={newStudentData.department_id || ""}
-                    onValueChange={(value) => setNewStudentData({ ...newStudentData, department_id: value, batch_id: "", tutor_id: undefined, hod_id: undefined })}
+                    onValueChange={(value) => {
+                      setNewStudentData({ ...newStudentData, department_id: value, batch_id: "", tutor_id: undefined, hod_id: undefined });
+                      setSelectedBatchYears(null); // Clear batch years when department changes
+                    }}
                     required
                   >
                     <SelectTrigger id="department_id">
@@ -457,7 +462,20 @@ const StudentManagement = () => {
                   <Select
                     key={newStudentData.department_id + "-batch"}
                     value={newStudentData.batch_id || ""}
-                    onValueChange={(value) => setNewStudentData({ ...newStudentData, batch_id: value })}
+                    onValueChange={(value) => {
+                      setNewStudentData({ ...newStudentData, batch_id: value });
+                      const selectedBatch = batches.find(b => b.id === value);
+                      if (selectedBatch?.name) {
+                        const yearParts = selectedBatch.name.split('-');
+                        if (yearParts.length === 2) {
+                          setSelectedBatchYears({ start: yearParts[0], end: yearParts[1] });
+                        } else {
+                          setSelectedBatchYears(null);
+                        }
+                      } else {
+                        setSelectedBatchYears(null);
+                      }
+                    }}
                     disabled={!newStudentData.department_id}
                     required
                   >
@@ -479,6 +497,18 @@ const StudentManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedBatchYears && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="batch_start_year">Batch Start Year</Label>
+                      <Input id="batch_start_year" value={selectedBatchYears.start || ""} disabled />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="batch_end_year">Batch End Year</Label>
+                      <Input id="batch_end_year" value={selectedBatchYears.end || ""} disabled />
+                    </div>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="tutor_id">Tutor (Optional)</Label>
                   <Select
