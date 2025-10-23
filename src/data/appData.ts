@@ -155,7 +155,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
       id,
       register_number,
       parent_name,
-      profiles (
+      student_profile:profiles!id (
         first_name,
         last_name,
         username,
@@ -191,13 +191,13 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
     id: student.id,
     register_number: student.register_number,
     parent_name: student.parent_name,
-    first_name: student.profiles?.first_name,
-    last_name: student.profiles?.last_name,
-    username: student.profiles?.username,
-    email: student.profiles?.email,
-    phone_number: student.profiles?.phone_number,
-    avatar_url: student.profiles?.avatar_url,
-    role: student.profiles?.role,
+    first_name: student.student_profile?.first_name,
+    last_name: student.student_profile?.last_name,
+    username: student.student_profile?.username,
+    email: student.student_profile?.email,
+    phone_number: student.student_profile?.phone_number,
+    avatar_url: student.student_profile?.avatar_url,
+    role: student.student_profile?.role,
     batch_id: student.batches?.id, // Assuming batch_id is needed, but not directly selected in the query above
     batch_name: student.batches ? `${student.batches.name} ${student.batches.section || ''}`.trim() : undefined,
     current_semester: student.batches?.current_semester,
@@ -445,12 +445,13 @@ export const updateTemplate = async (
         upsert: true,
       });
 
-    if (uploadError) {
+    if (uploadData) {
+      file_url = supabase.storage.from('certificate-templates').getPublicUrl(filePath).data.publicUrl;
+    } else if (uploadError) {
       showError("Error uploading new file: " + uploadError.message);
       console.error("Error uploading new file:", uploadError);
       return null;
     }
-    file_url = supabase.storage.from('certificate-templates').getPublicUrl(filePath).data.publicUrl;
   } else if (updates.template_type === 'html') {
     // If switching to HTML and no new file is provided, explicitly clear file_url
     file_url = null;
@@ -526,19 +527,27 @@ export const createStudent = async (
 ): Promise<StudentDetails | null> => {
   const { email, username, ...otherProfileData } = profileData;
   
-  // Check if email already exists
-  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
-    perPage: 1,
-    page: 1,
-    search: email,
-  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
+  // 1. Check if email already exists via Edge Function
+  const { data: existingUsersData, error: listUsersError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'listUsers',
+      payload: {
+        options: {
+          perPage: 1,
+          page: 1,
+          search: email,
+        } as AdminListUsersOptions,
+      },
+    }),
+  });
 
-  if (usersError) {
-    console.error("Error checking for existing user:", usersError);
-    showError("Failed to check for existing user: " + usersError.message);
+  if (listUsersError) {
+    console.error("Error checking for existing user via Edge Function:", listUsersError);
+    showError("Failed to check for existing user: " + listUsersError.message);
     return null;
   }
 
+  const existingUsers = existingUsersData as { users: any[] };
   if (existingUsers?.users && existingUsers.users.length > 0) {
     showError(`An account with email "${email}" already exists.`);
     return null;
@@ -547,43 +556,56 @@ export const createStudent = async (
   // Generate a random password if not provided (e.g., for bulk upload)
   const finalPassword = password || Math.random().toString(36).slice(-8); // Simple random password
 
-  // 1. Create the user in Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: email!, // email is required for signup
-    password: finalPassword,
-    options: {
-      data: {
-        ...otherProfileData, // Pass other profile fields as metadata
-        username: username || `${otherProfileData.first_name}.${studentData.register_number}`, // Ensure username is always set
-        role: 'student', // Ensure role is passed for the handle_new_user trigger
+  // 2. Create the user in Supabase Auth via Edge Function
+  const { data: authData, error: authError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'signUp',
+      payload: {
+        credentials: {
+          email: email!,
+          password: finalPassword,
+          options: {
+            data: {
+              ...otherProfileData,
+              username: username || `${otherProfileData.first_name}.${studentData.register_number}`,
+              role: 'student',
+            },
+          },
+        },
       },
-    },
+    }),
   });
 
   if (authError) {
-    console.error("Error signing up student user:", authError);
+    console.error("Error signing up student user via Edge Function:", authError);
     showError("Failed to create student user: " + authError.message);
     return null;
   }
 
-  if (authData.user) {
+  const newUser = (authData as any)?.user; // Cast to any to access user property
+  if (newUser) {
     // The trigger `handle_new_user` should have created the profile.
     // We need to fetch it to get the complete Profile object and ensure it exists.
     const { data: newProfile, error: profileFetchError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", authData.user.id)
+      .eq("id", newUser.id)
       .single();
 
     if (profileFetchError || !newProfile) {
       console.error("Error fetching newly created student profile:", profileFetchError);
       showError("Failed to retrieve new student profile: " + profileFetchError?.message);
       // Optionally, attempt to delete the auth user if profile creation failed
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabase.functions.invoke('manage-users', {
+        body: JSON.stringify({
+          action: 'deleteUser',
+          payload: { userId: newUser.id },
+        }),
+      });
       return null;
     }
 
-    // 2. Insert student-specific details into the 'students' table
+    // 3. Insert student-specific details into the 'students' table
     const { data: newStudentSpecificData, error: studentError } = await supabase
       .from("students")
       .insert({
@@ -602,7 +624,12 @@ export const createStudent = async (
       showError("Failed to create student entry: " + studentError?.message);
       // Roll back: delete the profile and auth user if student-specific data creation fails
       await supabase.from("profiles").delete().eq("id", newProfile.id);
-      await supabase.auth.admin.deleteUser(newProfile.id);
+      await supabase.functions.invoke('manage-users', {
+        body: JSON.stringify({
+          action: 'deleteUser',
+          payload: { userId: newProfile.id },
+        }),
+      });
       return null;
     }
 
@@ -614,52 +641,74 @@ export const createStudent = async (
 export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
   const { email, ...metaData } = profileData;
 
-  // Check if email already exists
-  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
-    perPage: 1,
-    page: 1,
-    search: email,
-  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
+  // 1. Check if email already exists via Edge Function
+  const { data: existingUsersData, error: listUsersError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'listUsers',
+      payload: {
+        options: {
+          perPage: 1,
+          page: 1,
+          search: email,
+        } as AdminListUsersOptions,
+      },
+    }),
+  });
 
-  if (usersError) {
-    console.error("Error checking for existing user:", usersError);
-    showError("Failed to check for existing user: " + usersError.message);
+  if (listUsersError) {
+    console.error("Error checking for existing user via Edge Function:", listUsersError);
+    showError("Failed to check for existing user: " + listUsersError.message);
     return null;
   }
 
+  const existingUsers = existingUsersData as { users: any[] };
   if (existingUsers?.users && existingUsers.users.length > 0) {
     showError(`An account with email "${email}" already exists.`);
     return null;
   }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: email!, // email is required for signup
-    password: password,
-    options: {
-      data: metaData, // Pass other profile fields as metadata
-    },
+  // 2. Create the user in Supabase Auth via Edge Function
+  const { data: authData, error: authError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'signUp',
+      payload: {
+        credentials: {
+          email: email!,
+          password: password,
+          options: {
+            data: metaData,
+          },
+        },
+      },
+    }),
   });
 
   if (authError) {
-    console.error("Error signing up tutor user:", authError);
+    console.error("Error signing up tutor user via Edge Function:", authError);
     showError("Failed to create tutor user: " + authError.message);
     return null;
   }
 
-  if (authData.user) {
+  const newUser = (authData as any)?.user;
+  if (newUser) {
     // The trigger `handle_new_user` should have created the profile.
     // We need to fetch it to return the complete Profile object.
     const { data: newProfile, error: profileFetchError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", authData.user.id)
+      .eq("id", newUser.id)
       .single();
 
     if (profileFetchError || !newProfile) {
       console.error("Error fetching newly created tutor profile:", profileFetchError);
       showError("Failed to retrieve new tutor profile: " + profileFetchError?.message);
       // Optionally, attempt to delete the auth user if profile creation failed
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabase.functions.invoke('manage-users', {
+        body: JSON.stringify({
+          action: 'deleteUser',
+          payload: { userId: newUser.id },
+        }),
+      });
       return null;
     }
     return newProfile as Profile;
@@ -679,26 +728,36 @@ export const updateTutor = async (tutorId: string, updates: Partial<Profile>): P
 };
 
 export const updateUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
-  const { data, error } = await supabase.auth.admin.updateUserById(
-    userId,
-    { password: newPassword }
-  );
+  const { data, error } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'updateUserById',
+      payload: {
+        userId: userId,
+        updates: { password: newPassword },
+      },
+    }),
+  });
 
   if (error) {
-    console.error("Error updating user password:", error);
+    console.error("Error updating user password via Edge Function:", error);
     showError("Failed to update user password: " + error.message);
     return false;
   }
-  console.log("User password updated successfully for user:", data?.user?.id);
+  console.log("User password updated successfully for user:", (data as any)?.user?.id);
   return true;
 };
 
 export const deleteTutor = async (tutorId: string): Promise<boolean> => {
-  // When deleting a tutor, we should also delete their auth.users entry.
-  // This will cascade delete the profile entry due to foreign key constraints.
-  const { error } = await supabase.auth.admin.deleteUser(tutorId);
+  // When deleting a tutor, we should also delete their auth.users entry via Edge Function.
+  const { error } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'deleteUser',
+      payload: { userId: tutorId },
+    }),
+  });
+
   if (error) {
-    console.error("Error deleting tutor user:", error);
+    console.error("Error deleting tutor user via Edge Function:", error);
     return false;
   }
   return true;
@@ -707,50 +766,74 @@ export const deleteTutor = async (tutorId: string): Promise<boolean> => {
 export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>, password: string): Promise<Profile | null> => {
   const { email, ...metaData } = profileData;
 
-  // Check if email already exists
-  const { data: existingUsers, error: usersError } = await supabase.auth.admin.listUsers({
-    perPage: 1,
-    page: 1,
-    search: email,
-  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
+  // 1. Check if email already exists via Edge Function
+  const { data: existingUsersData, error: listUsersError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'listUsers',
+      payload: {
+        options: {
+          perPage: 1,
+          page: 1,
+          search: email,
+        } as AdminListUsersOptions,
+      },
+    }),
+  });
 
-  if (usersError) {
-    console.error("Error checking for existing user:", usersError);
-    showError("Failed to check for existing user: " + usersError.message);
+  if (listUsersError) {
+    console.error("Error checking for existing user via Edge Function:", listUsersError);
+    showError("Failed to check for existing user: " + listUsersError.message);
     return null;
   }
 
+  const existingUsers = existingUsersData as { users: any[] };
   if (existingUsers?.users && existingUsers.users.length > 0) {
     showError(`An account with email "${email}" already exists.`);
     return null;
   }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: email!, // email is required for signup
-    password: password,
-    options: {
-      data: metaData, // Pass other profile fields as metadata
-    },
+  // 2. Create the user in Supabase Auth via Edge Function
+  const { data: authData, error: authError } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'signUp',
+      payload: {
+        credentials: {
+          email: email!,
+          password: password,
+          options: {
+            data: metaData,
+          },
+        },
+      },
+    }),
   });
 
   if (authError) {
-    console.error("Error signing up HOD user:", authError);
+    console.error("Error signing up HOD user via Edge Function:", authError);
     showError("Failed to create HOD user: " + authError.message);
     return null;
   }
 
-  if (authData.user) {
+  const newUser = (authData as any)?.user;
+  if (newUser) {
     // The trigger `handle_new_user` should have created the profile.
     // We need to fetch it to return the complete Profile object.
     const { data: newProfile, error: profileFetchError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", authData.user.id)
+      .eq("id", newUser.id)
       .single();
 
     if (profileFetchError || !newProfile) {
       console.error("Error fetching newly created HOD profile:", profileFetchError);
       showError("Failed to retrieve new HOD profile: " + profileFetchError?.message);
+      // Optionally, attempt to delete the auth user if profile creation failed
+      await supabase.functions.invoke('manage-users', {
+        body: JSON.stringify({
+          action: 'deleteUser',
+          payload: { userId: newUser.id },
+        }),
+      });
       return null;
     }
     return newProfile as Profile;
@@ -768,9 +851,16 @@ export const updateHod = async (hodId: string, updates: Partial<Profile>): Promi
 };
 
 export const deleteHod = async (hodId: string): Promise<boolean> => {
-  const { error } = await supabase.from("profiles").delete().eq("id", hodId);
+  // When deleting a HOD, we should also delete their auth.users entry via Edge Function.
+  const { error } = await supabase.functions.invoke('manage-users', {
+    body: JSON.stringify({
+      action: 'deleteUser',
+      payload: { userId: hodId },
+    }),
+  });
+
   if (error) {
-    console.error("Error deleting HOD:", error);
+    console.error("Error deleting HOD user via Edge Function:", error);
     return false;
   }
   return true;
