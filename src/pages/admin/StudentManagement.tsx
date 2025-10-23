@@ -157,11 +157,11 @@ const StudentManagement = () => {
 
         // Find batch by name and department_id
         const batch = batches.find(b =>
-          `${b.name} ${b.section || ''}`.trim() === student.batch_name?.trim() &&
+          `${b.name}${b.section ? ' ' + b.section : ''}`.trim() === student.batch_name?.trim() &&
           b.department_id === department.id
         );
         if (!batch) {
-          errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''}: Batch "${student.batch_name}" not found in department "${department.name}".`);
+          errors.push(`Skipping student ${student.first_name || ''} ${student.last_name || ''}: Batch "${student.batch_name}" not found in department "${department.name}". Please ensure the batch name includes the section (e.g., "2024-2028 A") if applicable.`);
           continue;
         }
 

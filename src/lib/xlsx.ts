@@ -10,7 +10,7 @@ const studentTemplateHeaders = [
   "register_number",
   "parent_name",
   "department_name", // Changed to name for user-friendliness
-  "batch_name",      // Changed to name for user-friendliness
+  "batch_name (e.g., 2024-2028 A)",      // Changed to name for user-friendliness, added example for section
   "password",        // New: Password for the student
 ];
 
