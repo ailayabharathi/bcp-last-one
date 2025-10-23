@@ -11,7 +11,7 @@ import {
   RequestStatus, // Imported RequestStatus
 } from "@/lib/types";
 import { showError } from "@/utils/toast";
-import { AdminListUsersOptions } from '@supabase/supabase-js'; // Import AdminListUsersOptions
+// Removed: import { AdminListUsersOptions } from '@supabase/supabase-js'; // Import AdminListUsersOptions
 
 // This file will now contain functions to interact with Supabase.
 
@@ -531,7 +531,7 @@ export const createStudent = async (
     perPage: 1,
     page: 1,
     search: email,
-  } as AdminListUsersOptions); // Explicitly cast to AdminListUsersOptions
+  }); // Removed explicit cast as AdminListUsersOptions is not exported
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
@@ -619,7 +619,7 @@ export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at'
     perPage: 1,
     page: 1,
     search: email,
-  } as AdminListUsersOptions); // Explicitly cast to AdminListUsersOptions
+  }); // Removed explicit cast as AdminListUsersOptions is not exported
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
@@ -712,7 +712,7 @@ export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' |
     perPage: 1,
     page: 1,
     search: email,
-  } as AdminListUsersOptions); // Explicitly cast to AdminListUsersOptions
+  }); // Removed explicit cast as AdminListUsersOptions is not exported
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
