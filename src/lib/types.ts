@@ -104,3 +104,12 @@ export interface NavItem {
 }
 
 export type ColorVariant = "default" | "blue" | "green"; // New type for color variants
+
+// Interface for Supabase Admin listUsers options
+export interface AdminListUsersOptions {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  sortBy?: 'email' | 'phone' | 'created_at' | 'last_sign_in_at' | 'role' | 'updated_at';
+  sortOrder?: 'asc' | 'desc';
+}

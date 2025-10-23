@@ -9,9 +9,9 @@ import {
   TutorDetails,
   HodDetails,
   RequestStatus, // Imported RequestStatus
+  AdminListUsersOptions, // Imported AdminListUsersOptions
 } from "@/lib/types";
 import { showError } from "@/utils/toast";
-// Removed: import { AdminListUsersOptions } from '@supabase/supabase-js'; // Import AdminListUsersOptions
 
 // This file will now contain functions to interact with Supabase.
 
@@ -155,7 +155,7 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
       id,
       register_number,
       parent_name,
-      student_profile:profiles!id (
+      profiles (
         first_name,
         last_name,
         username,
@@ -191,13 +191,13 @@ export const fetchAllStudentsWithDetails = async (): Promise<StudentDetails[]> =
     id: student.id,
     register_number: student.register_number,
     parent_name: student.parent_name,
-    first_name: student.student_profile?.first_name,
-    last_name: student.student_profile?.last_name,
-    username: student.student_profile?.username,
-    email: student.student_profile?.email,
-    phone_number: student.student_profile?.phone_number,
-    avatar_url: student.student_profile?.avatar_url,
-    role: student.student_profile?.role,
+    first_name: student.profiles?.first_name,
+    last_name: student.profiles?.last_name,
+    username: student.profiles?.username,
+    email: student.profiles?.email,
+    phone_number: student.profiles?.phone_number,
+    avatar_url: student.profiles?.avatar_url,
+    role: student.profiles?.role,
     batch_id: student.batches?.id, // Assuming batch_id is needed, but not directly selected in the query above
     batch_name: student.batches ? `${student.batches.name} ${student.batches.section || ''}`.trim() : undefined,
     current_semester: student.batches?.current_semester,
@@ -531,7 +531,7 @@ export const createStudent = async (
     perPage: 1,
     page: 1,
     search: email,
-  }); // Removed explicit cast as AdminListUsersOptions is not exported
+  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
@@ -619,7 +619,7 @@ export const createTutor = async (profileData: Omit<Profile, 'id' | 'created_at'
     perPage: 1,
     page: 1,
     search: email,
-  }); // Removed explicit cast as AdminListUsersOptions is not exported
+  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
@@ -712,7 +712,7 @@ export const createHod = async (profileData: Omit<Profile, 'id' | 'created_at' |
     perPage: 1,
     page: 1,
     search: email,
-  }); // Removed explicit cast as AdminListUsersOptions is not exported
+  } as AdminListUsersOptions); // Cast to AdminListUsersOptions
 
   if (usersError) {
     console.error("Error checking for existing user:", usersError);
