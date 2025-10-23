@@ -61,7 +61,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { fetchProfiles, fetchDepartments, createHod, updateHod, updateUserPassword } from "@/data/appData";
+import { fetchProfiles, fetchDepartments, createHod, updateHod, updateUserPassword, deleteHod } from "@/data/appData";
 import { Profile, Department } from "@/lib/types";
 import { showSuccess, showError } from "@/utils/toast";
 
