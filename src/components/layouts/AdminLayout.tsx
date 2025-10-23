@@ -10,7 +10,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { Outlet } from "react-router-dom";
-import { NavItem } => "@/lib/types";
+import { NavItem } from "@/lib/types"; // Corrected '=>' to 'from'
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
