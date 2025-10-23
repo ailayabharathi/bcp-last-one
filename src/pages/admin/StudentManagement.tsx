@@ -419,7 +419,7 @@ const StudentManagement = () => {
                 <div className="grid gap-2">
                   <Label htmlFor="batch_id">Batch</Label>
                   <Select
-                    key={newStudentData.department_id + "-batch"} // Added key
+                    key={newStudentData.department_id + "-batch"}
                     value={newStudentData.batch_id || ""}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, batch_id: value })}
                     disabled={!newStudentData.department_id}
@@ -429,18 +429,24 @@ const StudentManagement = () => {
                       <SelectValue placeholder="Select Batch" />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredBatchesByDepartment.map((batch) => (
-                        <SelectItem key={batch.id} value={batch.id}>
-                          {`${batch.name} ${batch.section || ''}`.trim()}
+                      {filteredBatchesByDepartment.length > 0 ? (
+                        filteredBatchesByDepartment.map((batch) => (
+                          <SelectItem key={batch.id} value={batch.id}>
+                            {`${batch.name} ${batch.section || ''}`.trim()}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-batches" disabled>
+                          No batches for this department
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="tutor_id">Tutor (Optional)</Label>
                   <Select
-                    key={newStudentData.department_id + "-tutor"} // Added key
+                    key={newStudentData.department_id + "-tutor"}
                     value={newStudentData.tutor_id || "unassigned"}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, tutor_id: value === "unassigned" ? undefined : value })}
                     disabled={!newStudentData.department_id}
@@ -450,18 +456,24 @@ const StudentManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {filteredTutorsByDepartment.map((tutor) => (
-                        <SelectItem key={tutor.id} value={tutor.id}>
-                          {`${tutor.first_name} ${tutor.last_name || ''}`.trim()}
+                      {filteredTutorsByDepartment.length > 0 ? (
+                        filteredTutorsByDepartment.map((tutor) => (
+                          <SelectItem key={tutor.id} value={tutor.id}>
+                            {`${tutor.first_name} ${tutor.last_name || ''}`.trim()}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-tutors" disabled>
+                          No tutors for this department
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="hod_id">HOD (Optional)</Label>
                   <Select
-                    key={newStudentData.department_id + "-hod"} // Added key
+                    key={newStudentData.department_id + "-hod"}
                     value={newStudentData.hod_id || "unassigned"}
                     onValueChange={(value) => setNewStudentData({ ...newStudentData, hod_id: value === "unassigned" ? undefined : value })}
                     disabled={!newStudentData.department_id}
@@ -471,11 +483,17 @@ const StudentManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {filteredHodsByDepartment.map((hod) => (
-                        <SelectItem key={hod.id} value={hod.id}>
-                          {`${hod.first_name} ${hod.last_name || ''}`.trim()}
+                      {filteredHodsByDepartment.length > 0 ? (
+                        filteredHodsByDepartment.map((hod) => (
+                          <SelectItem key={hod.id} value={hod.id}>
+                            {`${hod.first_name} ${hod.last_name || ''}`.trim()}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-hods" disabled>
+                          No HODs for this department
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
