@@ -853,7 +853,7 @@ export const updateHod = async (hodId: string, updates: Partial<Profile>): Promi
 export const deleteHod = async (hodId: string): Promise<boolean> => {
   // When deleting a HOD, we should also delete their auth.users entry via Edge Function.
   const { error } = await supabase.functions.invoke('manage-users', {
-    body: JSON.stringify({
+    body: JSON_stringify({
       action: 'deleteUser',
       payload: { userId: hodId },
     }),
